@@ -317,7 +317,6 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
             style_from_coordinates = [self.le_lat_a, self.le_lng_a,
                                       self.le_lat_b, self.le_lng_b]
             style_sheet_coord = "background-color: rgb(179, 229, 252);"  # blue
-            # style_from_main = [self.le_work_frequency, self.le_group_speed, self.le_power]
             style_sheet_main = "background-color: rgb(197, 225, 165);"  # green
             style_sheet_else = "background-color: rgb(224, 224, 224);"  # grey
 
