@@ -13,7 +13,7 @@ from mplwidget import MplWidget
 class UiMainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1119, 862)
+        MainWindow.resize(1119, 900)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -109,7 +109,7 @@ class UiMainWindow(object):
         self.horizontalLayout_3.addLayout(self.verticalLayout_9)
         self.gv_osm_plot = MplWidget(self.centralwidget)
         self.gv_osm_plot.setEnabled(True)
-        self.gv_osm_plot.setGeometry(QtCore.QRect(0, 672, 1101, 190))
+        self.gv_osm_plot.setGeometry(QtCore.QRect(0, 670, 1101, 230))
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)

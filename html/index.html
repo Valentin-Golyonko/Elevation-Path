@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!–– v2 ––>
 <html style="height:100%;margin:0;padding:0;">
 	<head>
 		<title>Leaflet page with OSM render server selection</title>
@@ -12,63 +13,57 @@
 	</head>
 	<body style="height:100%;margin:0;padding:0;">
 		<div id="map" style="height:100%; font-size:16px"></div>
-		
+
 		<script>
+			var parsedUrl = new URL(window.location.href);
+			var queryString = parsedUrl.search;
+			console.log(queryString)
+			// Further parsing:
+			let params = new URLSearchParams(queryString);
+			let point_a_lat = parseFloat(params.get("lata"));
+			let point_a_lng = parseFloat(params.get("lnga"));
+			let point_b_lat = parseFloat(params.get("latb"));
+			let point_b_lng = parseFloat(params.get("lngb"));
+
+			console.log(point_a_lat)
+			console.log(point_a_lng)
+			console.log(point_b_lat)
+			console.log(point_b_lng)
+
 			var tooltip_a = "<b>Point A</b>";
 			var tooltip_b = "<b>Point B</b>";
-			
-			var xmlhttp = new XMLHttpRequest();
-			xmlhttp.onreadystatechange = function() {
-				if (this.readyState == 4 && this.status == 200) {
-					var points = JSON.parse(this.responseText);
-					var point_a_lat = parseFloat(points.point[0].lat);
-					var point_a_lng = parseFloat(points.point[0].lng);
-					var point_b_lat = parseFloat(points.point[1].lat);
-					var point_b_lng = parseFloat(points.point[1].lng);
-					var line_ab = points.path;
-					
-					var line_d = [[point_a_lat, point_a_lng], [point_b_lat,point_b_lng]];
-						
-					console.log(point_a_lat);
-					console.log(point_a_lng);
-					console.log(point_b_lat);
-					console.log(point_b_lng);
-					console.log(line_ab);
 
-					var map = L.map('map').setView([53.758, 27.727], 7);
+			var line_d = [[point_a_lat, point_a_lng], [point_b_lat, point_b_lng]];
 
-					L.tileLayer('http://127.0.0.1/hot/{z}/{x}/{y}.png', {
-						attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-					}).addTo(map);
+			var map = L.map('map').setView([53.758, 27.727], 7);
 
-					var hash = L.hash(map)
+			L.tileLayer('http://127.0.0.1/hot/{z}/{x}/{y}.png', {
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			}).addTo(map);
 
-					var mark_a = L.marker([point_a_lat, point_a_lng]).addTo(map);
-					mark_a.bindTooltip(tooltip_a).openTooltip();
-				
-					var mark_b = L.marker([point_b_lat, point_b_lng]).addTo(map);
-					mark_b.bindTooltip(tooltip_b).openTooltip();
-				
-					var mark = L.marker();
-					var popup = L.popup();
+			var hash = L.hash(map)
 
-					var line = L.polyline(line_ab, {color: 'red'}).addTo(map);
-					var line_direct = L.polyline(line_d, {color: 'blue'}).addTo(map);
+			var mark_a = L.marker([point_a_lat, point_a_lng]).addTo(map);
+			mark_a.bindTooltip(tooltip_a).openTooltip();
 
-					function onMapClick(e) {
-						mark
-						.setLatLng(e.latlng)
-						.bindPopup(e.latlng.toString())
-						.openPopup()
-						.addTo(map);
-					}
+			var mark_b = L.marker([point_b_lat, point_b_lng]).addTo(map);
+			mark_b.bindTooltip(tooltip_b).openTooltip();
 
-					map.on('click', onMapClick);
-				}
-			};
-			
-			xmlhttp.open("GET", "http://localhost/test.json", true);
-			xmlhttp.send();
+			var mark = L.marker();
+			var popup = L.popup();
+
+			var line_direct = L.polyline(line_d, {color: 'blue'}).addTo(map);
+
+			function onMapClick(e) {
+				mark
+				.setLatLng(e.latlng)
+				.bindPopup(e.latlng.toString())
+				.openPopup()
+				.addTo(map);
+			}
+
+			map.on('click', onMapClick);
+
 		</script>
 	</body>
 </html>

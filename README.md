@@ -20,7 +20,8 @@ Data obtained from the satellite is used for <i>offline</i> calculation,
 they are converted in the QGIS program from images to geojson data.
 
 # TODO:
-- redo the program data exchange with the server;
+- <s>redo the program data exchange with the server;</s>
+- connection error with local (WAN) server;
 - database;
 - multithreading;
 - 

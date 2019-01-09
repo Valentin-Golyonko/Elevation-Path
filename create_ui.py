@@ -9,6 +9,7 @@ from PyQt5 import QtCore, QtWidgets
 from elevation_path import UiMainWindow
 import GeoJson
 
+
 # from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets  +  QtWebEngineWidgets.QWebEngineView
 # from mplwidget import MplWidget
 
@@ -36,7 +37,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
             self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 511))
 
             self.plot_path()
-        else:
+        elif self.rb_google_map.isChecked():
             self.gv_osm_plot.hide()
             self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 702))
 
@@ -73,9 +74,12 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
     def load_web_page(self):
 
         if self.rb_osm_map.isChecked():
-            self.webView.setUrl(QtCore.QUrl("http://localhost/index.html"))
+            self.webView.setUrl(QtCore.QUrl("http://localhost/index.html" +
+                                            "?lata=" + str(latitude_a) + "&lnga=" + str(longitude_a) +
+                                            "&latb=" + str(latitude_b) + "&lngb=" + str(longitude_b)))
+            # or "http://Your Server IP/index.html" + same
+
             self.webView.update()
-            self.webView.reload()
         elif self.rb_google_map.isChecked():
             google_html_page = str('''
                         <!DOCTYPE html>
