@@ -3,9 +3,9 @@ The program is designed to calculate the communication line and the elevation di
 using offline OSM map or online google maps.
 
 # Images:
-<a href="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/osm%20map%20and%20altitude%20line.png">osm map and altitude line</a>
+<img src="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/osm%20map%20and%20altitude%20line.png" alt="web_view">
 
-<a href="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/google%20map%20and%20altitude%20line.png">google map and altitude line</a>
+<img src="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/google%20map%20and%20altitude%20line.png" alt="web_view">
 
 # How to:
 OpenStreetMap server is installed on Ubuntu 18.10 using
