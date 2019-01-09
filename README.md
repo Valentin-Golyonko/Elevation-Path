@@ -2,6 +2,11 @@
 The program is designed to calculate the communication line and the elevation difference on it
 using offline OSM map or online google maps.
 
+# Images:
+<a href="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/osm%20map%20and%20altitude%20line.png">osm map and altitude line</a>
+
+<a href="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/google%20map%20and%20altitude%20line.png">google map and altitude line</a>
+
 # How to:
 OpenStreetMap server is installed on Ubuntu 18.10 using
 <a href="https://switch2osm.org/manually-building-a-tile-server-18-04-lts/">Manually building a tile server (18.04 LTS)</a>
