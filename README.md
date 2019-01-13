@@ -6,7 +6,7 @@ using offline OSM map or online google maps.
 osm map, elevation accuracy 5m, 1 point per 1 km -
 <img src="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/osm%20map%2C%20elevation%20accuracy%205m%2C%201%20point%20per%20km.png" alt="web_view">
 
-google map, elevation 512 points per path -
+google map, elevation 100 points per path -
 <img src="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/google%20map%2C%20elevation%20512%20points%20per%20path.png" alt="web_view">
 
 # How to:

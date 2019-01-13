@@ -1,7 +1,10 @@
-import datetime
+# from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets  +  QtWebEngineWidgets.QWebEngineView
+# from mplwidget import MplWidget
+
 import math
 import json
 import random
+import time
 
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
@@ -10,38 +13,49 @@ from elevation_path import UiMainWindow
 import GeoJson
 
 
-# from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets  +  QtWebEngineWidgets.QWebEngineView
-# from mplwidget import MplWidget
-
-
 class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.show()
 
-        self.fill_forms()
-
         GeoJson.open_geojson_5m()
+
+        self.fill_forms()
 
         self.pb_do_path.clicked.connect(self.do_path)
 
-    # отправить запрос в Google Maps исходя из координат точек А и Б (из вкладки 1 в 2)
+    #
     def do_path(self):
         print("do_path()")
+        time_60 = time.perf_counter()
 
         self.get_points_ab()
 
-        if self.rb_osm_map.isChecked():
-            self.gv_osm_plot.show()
-            self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 511))
+        if latitude_a != -1 and longitude_a != -1 and latitude_b != -1 and longitude_b != -1:
+            # select map server
+            if self.rb_osm_map.isChecked():
+                self.gv_osm_plot.show()
+                self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 511))
 
-            self.plot_path()
-        elif self.rb_google_map.isChecked():
-            self.gv_osm_plot.hide()
-            self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 702))
+                # calculate GeoJson data
+                GeoJson.find_points(latitude_a, longitude_a, latitude_b, longitude_b)
+                GeoJson.create_json(latitude_a, longitude_a, latitude_b, longitude_b)
+                # GeoJson.plot_path()
 
-        self.load_web_page()
+                self.plot_elevation()
+                self.load_osm_map()
+
+            elif self.rb_google_map.isChecked():
+                self.gv_osm_plot.hide()
+                self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 702))
+
+                self.load_google_maps()
+        else:
+            print("\tcoordinates input ERROR")
+
+        time_61 = time.perf_counter() - time_60
+        print("\ttime_6.1: " + str(time_61) + " (" + str(time_61 / 60) + " min)\n")
 
     def get_points_ab(self):
         print("get_points_ab()")
@@ -52,11 +66,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         latitude_b = self.input_check(self.le_lat_b.text(), self.le_lat_b)
         longitude_b = self.input_check(self.le_lng_b.text(), self.le_lng_b)
 
-    def plot_path(self):
-        GeoJson.find_points(latitude_a, longitude_a, latitude_b, longitude_b)
-        GeoJson.create_json(latitude_a, longitude_a, latitude_b, longitude_b)
-        # GeoJson.plot_path()
-
+    def plot_elevation(self):
         # clear the Axes to ensure that the next plot will seem a completely new one
         self.gv_osm_plot.canvas.ax.clear()
 
@@ -71,17 +81,16 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.gv_osm_plot.canvas.ax.stackplot(x, y)
         self.gv_osm_plot.canvas.draw()
 
-    def load_web_page(self):
+    def load_osm_map(self):
+        self.webView.setUrl(QtCore.QUrl("http://localhost/index.html" +
+                                        "?lata=" + str(latitude_a) + "&lnga=" + str(longitude_a) +
+                                        "&latb=" + str(latitude_b) + "&lngb=" + str(longitude_b)))
+        # or "http://Your Server IP/index.html" + same
 
-        if self.rb_osm_map.isChecked():
-            self.webView.setUrl(QtCore.QUrl("http://localhost/index.html" +
-                                            "?lata=" + str(latitude_a) + "&lnga=" + str(longitude_a) +
-                                            "&latb=" + str(latitude_b) + "&lngb=" + str(longitude_b)))
-            # or "http://Your Server IP/index.html" + same
+        self.webView.update()
 
-            self.webView.update()
-        elif self.rb_google_map.isChecked():
-            google_html_page = str('''
+    def load_google_maps(self):
+        google_html_page = str('''
                         <!DOCTYPE html>
                         <html>
                             <head>
@@ -139,173 +148,160 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
                                         function loadJson(){
                                             '''
-                                   + str("point_a_lat = " + str(latitude_a) + ";" +
-                                         "point_a_lng = " + str(longitude_a) + ";" +
-                                         "point_b_lat = " + str(latitude_b) + ";" +
-                                         "point_b_lng = " + str(longitude_b) + ";") +
-                                   '''
+                               + str("point_a_lat = " + str(latitude_a) + ";" +
+                                     "point_a_lng = " + str(longitude_a) + ";" +
+                                     "point_b_lat = " + str(latitude_b) + ";" +
+                                     "point_b_lng = " + str(longitude_b) + ";") +
+                               '''
+                            }
+
+                            function initMap() {
+                                // The following path marks a path from Mt. Whitney, the highest point in the
+                                // continental United States to Badwater, Death Valley, the lowest point.
+                                var path = [
+                                    {lat: point_a_lat, lng: point_a_lng},
+                                    {lat: point_b_lat, lng: point_b_lng}
+                                ];
+
+                                var mapOptions = {
+                                  zoom: 7,
+                                  center: {lat: 53.9021935, lng: 27.5619195}, // Minsk
+                                  // mapTypeId: https://developers.google.com/maps/documentation/javascript/maptypes
+                                  mapTypeId: 'terrain',
+                                  scaleControl: true,
+                                  rotateControl: true,
+                                };
+
+                                var map = new google.maps.Map(document.getElementById('map'), mapOptions);
+
+                                // Create an ElevationService.
+                                var elevator = new google.maps.ElevationService;
+
+                                // Draw the path, using the Visualization API and the Elevation service.
+                                displayPathElevation(path, elevator, map);
+
+                                marker1 = new google.maps.Marker({
+                                    map: map,
+                                    label: 'A',
+                                    position: {lat: point_a_lat, lng: point_a_lng}
+                                });
+
+                                marker2 = new google.maps.Marker({
+                                    map: map,
+                                    label: 'Б',
+                                    position: {lat: point_b_lat, lng: point_b_lng}
+                                });
+
+                                var bounds = new google.maps.LatLngBounds(
+                                    marker1.getPosition(), marker2.getPosition());
+                                map.fitBounds(bounds);
+                            }
+
+                            function displayPathElevation(path, elevator, map) {
+                                // Display a polyline of the elevation path.
+                                new google.maps.Polyline({
+                                  path: path,
+                                  strokeColor: '#FF0000',
+                                  strokeOpacity: 1.0,
+                                  strokeWeight: 3,
+                                  map: map
+                                });
+
+                                // Create a PathElevationRequest object using this array.
+                                // Ask for 256 samples along that path.
+                                // Initiate the path request.
+                                elevator.getElevationAlongPath({
+                                  'path': path,
+                                  'samples': 100
+                                }, plotElevation);
+                            }
+
+                            // Takes an array of ElevationResult objects, draws the path on the map
+                            // and plots the elevation profile on a Visualization API ColumnChart.
+                            function plotElevation(elevations, status) {
+                                var chartDiv = document.getElementById('elevation_chart');
+                                if (status !== 'OK') {
+                                    // Show the error code inside the chartDiv.
+                                    chartDiv.innerHTML = 'Cannot show elevation: request failed because ' +
+                                    status;
+                                    return;
+                                }
+                                // Create a new chart in the elevation_chart DIV.
+                                // Google chart tools: https://developers.google.com/chart/
+                                var chart = new google.visualization.AreaChart(chartDiv);
+
+                                var between_ab = [marker1.getPosition(), marker2.getPosition()];
+                                var distance_ab = 
+                                    google.maps.geometry.spherical.computeDistanceBetween(between_ab[0], between_ab[1]);
+                                var round_distance = Math.round(distance_ab);
+                                distance_ab_km = round_distance / 1000;
+                                document.getElementById('distance_ab').value = distance_ab_km;
+
+                                var e_length = elevations.length;
+                                point_a_hight = Math.round(elevations[0].elevation * 100) / 100;
+                                point_b_hight = Math.round(elevations[e_length - 1].elevation * 100) / 100;
+                                document.getElementById('a_hight').value = point_a_hight;
+                                document.getElementById('b_hight').value = point_b_hight;
+
+                                // Extract the data from which to populate the chart.
+                                // Because the samples are equidistant, the 'Sample'
+                                // column here does double duty as distance along the X axis.
+                                var data = new google.visualization.DataTable();
+                                data.addColumn('string', 'UNIX');
+                                data.addColumn('number', 'Elevation');
+                                for (var i = 0; i < e_length; i++) {
+                                    var e_point = Math.round(elevations[i].elevation * 100) / 100;
+                                    var e_location = elevations[i].location;
+                                    var distance_a_e = 
+                                        google.maps.geometry.spherical.computeDistanceBetween(
+                                            marker1.getPosition(), e_location);
+                                    var d_point = Math.round(distance_a_e) / 1000;  // km
+
+                                    data.addRow(['' + d_point, e_point]);
+
+                                    point_distance.push(String(d_point)); 
+                                    point_elevation.push(String(e_point)); 
                                 }
 
-                                function initMap() {
-                                    // The following path marks a path from Mt. Whitney, the highest point in the
-                                    // continental United States to Badwater, Death Valley, the lowest point.
-                                    var path = [
-                                        {lat: point_a_lat, lng: point_a_lng},
-                                        {lat: point_b_lat, lng: point_b_lng}
-                                    ];
+                                var options = {
+                                    titleY: 'Elevation (m)',
+                                    curveType: 'function',
+                                    legend: 'none',
+                                    height: 300,
+                                };
 
-                                    var mapOptions = {
-                                      zoom: 7,
-                                      center: {lat: 53.9021935, lng: 27.5619195}, // Minsk
-                                      // mapTypeId: https://developers.google.com/maps/documentation/javascript/maptypes
-                                      mapTypeId: 'terrain',
-                                      scaleControl: true,
-                                      rotateControl: true,
-                                    };
+                                // Draw the chart using the data within its DIV.
+                                chart.draw(data, options);
 
-                                    var map = new google.maps.Map(document.getElementById('map'), mapOptions);
-
-                                    // Create an ElevationService.
-                                    var elevator = new google.maps.ElevationService;
-
-                                    // Draw the path, using the Visualization API and the Elevation service.
-                                    displayPathElevation(path, elevator, map);
-
-                                    marker1 = new google.maps.Marker({
-                                        map: map,
-                                        label: 'A',
-                                        position: {lat: point_a_lat, lng: point_a_lng}
-                                    });
-
-                                    marker2 = new google.maps.Marker({
-                                        map: map,
-                                        label: 'Б',
-                                        position: {lat: point_b_lat, lng: point_b_lng}
-                                    });
-
-                                    var bounds = new google.maps.LatLngBounds(
-                                        marker1.getPosition(), marker2.getPosition());
-                                    map.fitBounds(bounds);
-                                }
-
-                                function displayPathElevation(path, elevator, map) {
-                                    // Display a polyline of the elevation path.
-                                    new google.maps.Polyline({
-                                      path: path,
-                                      strokeColor: '#FF0000',
-                                      strokeOpacity: 1.0,
-                                      strokeWeight: 3,
-                                      map: map
-                                    });
-
-                                    // Create a PathElevationRequest object using this array.
-                                    // Ask for 256 samples along that path.
-                                    // Initiate the path request.
-                                    elevator.getElevationAlongPath({
-                                      'path': path,
-                                      'samples': 100
-                                    }, plotElevation);
-                                }
-
-                                // Takes an array of ElevationResult objects, draws the path on the map
-                                // and plots the elevation profile on a Visualization API ColumnChart.
-                                function plotElevation(elevations, status) {
-                                    var chartDiv = document.getElementById('elevation_chart');
-                                    if (status !== 'OK') {
-                                        // Show the error code inside the chartDiv.
-                                        chartDiv.innerHTML = 'Cannot show elevation: request failed because ' +
-                                        status;
-                                        return;
-                                    }
-                                    // Create a new chart in the elevation_chart DIV.
-                                    // Google chart tools: https://developers.google.com/chart/
-                                    var chart = new google.visualization.AreaChart(chartDiv);
-
-                                    var between_ab = [marker1.getPosition(), marker2.getPosition()];
-                                    var distance_ab = 
-                                        google.maps.geometry.spherical.computeDistanceBetween(between_ab[0], between_ab[1]);
-                                    var round_distance = Math.round(distance_ab);
-                                    distance_ab_km = round_distance / 1000;
-                                    document.getElementById('distance_ab').value = distance_ab_km;
-
-                                    var e_length = elevations.length;
-                                    point_a_hight = Math.round(elevations[0].elevation * 100) / 100;
-                                    point_b_hight = Math.round(elevations[e_length - 1].elevation * 100) / 100;
-                                    document.getElementById('a_hight').value = point_a_hight;
-                                    document.getElementById('b_hight').value = point_b_hight;
-
-                                    // Extract the data from which to populate the chart.
-                                    // Because the samples are equidistant, the 'Sample'
-                                    // column here does double duty as distance along the X axis.
-                                    var data = new google.visualization.DataTable();
-                                    data.addColumn('string', 'UNIX');
-                                    data.addColumn('number', 'Elevation');
-                                    for (var i = 0; i < e_length; i++) {
-                                        var e_point = Math.round(elevations[i].elevation * 100) / 100;
-                                        var e_location = elevations[i].location;
-                                        var distance_a_e = 
-                                            google.maps.geometry.spherical.computeDistanceBetween(
-                                                marker1.getPosition(), e_location);
-                                        var d_point = Math.round(distance_a_e) / 1000;  // km
-
-                                        data.addRow(['' + d_point, e_point]);
-
-                                        point_distance.push(String(d_point)); 
-                                        point_elevation.push(String(e_point)); 
-                                    }
-
-                                    var options = {
-                                        titleY: 'Elevation (m)',
-                                        curveType: 'function',
-                                        legend: 'none',
-                                        height: 300,
-                                    };
-
-                                    // Draw the chart using the data within its DIV.
-                                    chart.draw(data, options);
-
-                                    // Save data to JSON file
-                                    /*
-                                        var json_distance_ab = JSON.stringify(String(distance_ab_km));
-                                        var json_a_hight = JSON.stringify(String(point_a_hight));
-                                        var json_b_hight = JSON.stringify(String(point_b_hight));
-                                        var json_distance = JSON.stringify(point_distance);
-                                        var json_elevation = JSON.stringify(point_elevation);
-                                        document.getElementById("t_d_ab").innerHTML = json_distance_ab;
-                                        document.getElementById("t_a_hight").innerHTML = json_a_hight;
-                                        document.getElementById("t_b_hight").innerHTML = json_b_hight;
-                                        document.getElementById("t_distance").innerHTML = json_distance;
-                                        document.getElementById("t_elevation").innerHTML = json_elevation;
-                                    */
-                                }
-
-                                // Check browser support
+                                // Save data to JSON file
                                 /*
-                                if (typeof(Storage) !== "undefined") {
-                                    // Store
-                                    sessionStorage.setItem("lastname", "Smith");
-                                    // Retrieve
-                                    document.getElementById("result").innerHTML = localStorage.getItem("lastname");
-                                } else {
-                                    document.getElementById("result").innerHTML = 
-                                        "Sorry, your browser does not support Web Storage...";
-                                }
+                                    var json_distance_ab = JSON.stringify(String(distance_ab_km));
+                                    var json_a_hight = JSON.stringify(String(point_a_hight));
+                                    var json_b_hight = JSON.stringify(String(point_b_hight));
+                                    var json_distance = JSON.stringify(point_distance);
+                                    var json_elevation = JSON.stringify(point_elevation);
+                                    document.getElementById("t_d_ab").innerHTML = json_distance_ab;
+                                    document.getElementById("t_a_hight").innerHTML = json_a_hight;
+                                    document.getElementById("t_b_hight").innerHTML = json_b_hight;
+                                    document.getElementById("t_distance").innerHTML = json_distance;
+                                    document.getElementById("t_elevation").innerHTML = json_elevation;
                                 */
+                            }
 
-                                // Release channels and version numbers:
-                                // https://developers.google.com/maps/documentation/javascript/versions
-                                // Localizing the Map:
-                                // https://developers.google.com/maps/documentation/javascript/localization
-                            </script>
-                            <script async defer
-                                src="https://maps.googleapis.com/maps/api/js?v=quarterly&key=AIzaSyDIEAksFJ1CxnEaPudrekX1RuPhuBU0Gno&libraries=geometry&callback=initMap&language=ru&region=BY">
-                            </script>
-                        </div>
-                    </body>
-                </html>
-            ''')
+                            // Release channels and version numbers:
+                            // https://developers.google.com/maps/documentation/javascript/versions
+                            // Localizing the Map:
+                            // https://developers.google.com/maps/documentation/javascript/localization
+                        </script>
+                        <script async defer
+                            src="https://maps.googleapis.com/maps/api/js?v=quarterly&key=AIzaSyDIEAksFJ1CxnEaPudrekX1RuPhuBU0Gno&libraries=geometry&callback=initMap&language=ru&region=BY">
+                        </script>
+                    </div>
+                </body>
+            </html>
+        ''')
 
-            self.webView.setHtml(google_html_page)
+        self.webView.setHtml(google_html_page)
 
     # проверка неправильного ввода (посимвольный перебор)
     def input_check(self, input_str, style):
@@ -366,7 +362,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
     def fill_forms(self):
         print("fill_forms()")
 
-        self.webView.setUrl(QtCore.QUrl("http://localhost/index.html#7/53.758/27.724"))
+        self.webView.setUrl(QtCore.QUrl("http://localhost/index.html"))
 
         lat_a = random.randint(53156653, 54082254) / 1000000
         lng_a = random.randint(24884033, 26976929) / 1000000

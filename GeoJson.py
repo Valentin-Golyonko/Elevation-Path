@@ -20,6 +20,7 @@ max_betta_b = 0.0
 
 # --------------------------------- methods ---------------------------------------
 def open_geojson_5m():
+    print("opening blr_elev_5m_v2")
     global data
     with open('blr_elev_5m_v2.geojson') as f:  # blr_elev_1m_v1.geojson / blr_elev_5m_v2.geojson / test.geojson
         data = geojson.load(f)
@@ -29,6 +30,7 @@ def open_geojson_5m():
 
 
 def open_geojson_1m():
+    print("opening blr_elev_1m_v1")
     global data
     with open('blr_elev_1m_v1.geojson') as f:  # blr_elev_1m_v1.geojson / blr_elev_5m_v2.geojson / test.geojson
         data = geojson.load(f)
@@ -167,6 +169,7 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
 
 
 def distance(lat_a, lng_a, lat_b, lng_b, ):
+    # formula from Wiki
     rad_lat_a = math.radians(lat_a)
     rad_lat_b = math.radians(lat_b)
     rad_lng_a = math.radians(lng_a)
@@ -197,8 +200,8 @@ def create_json(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     print("\ttime_4: " + str(time_4))
 
 
-def plot_path():
-    print("plot_path()")
+def plot_elevation_in_separate_window():
+    print("GeoJson: plot_elevation()")
 
     x = range(0, number_of_points)
 
@@ -245,7 +248,7 @@ elif run_geojson:
 
     create_json(lat0a, lng0a, lat0b, lng0b)
 
-    plot_path()
+    plot_elevation_in_separate_window()
 
     time_all = time.perf_counter() - start_time_0
     print("\ttime_all: " + str(time_all) + "\n")
