@@ -18,9 +18,6 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.setupUi(self)
         self.show()
 
-        # GeoJson.open_geojson_5m()
-        # GeoJson.open_geojson_1m()
-
         self.fill_forms()
 
         self.pb_do_path.clicked.connect(self.do_path)
