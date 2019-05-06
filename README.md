@@ -3,11 +3,11 @@ The program is designed to calculate the communication line and the elevation di
 using offline OSM map or online google maps.
 
 # Images:
-osm map, elevation accuracy 5m, 1 point per 1 km -
-<img src="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/osm%20map%2C%20elevation%20accuracy%205m%2C%201%20point%20per%20km.png" alt="web_view">
+Offline Open Street Map, elevation accuracy 1 point per 1 km -
+<img src="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/Screenshot_OSM.png" alt="web_view">
 
-google map, elevation 100 points per path -
-<img src="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/google%20map%2C%20elevation%20512%20points%20per%20path.png" alt="web_view">
+Online Google Maps, elevation accuracy 1 point per 1 km -
+<img src="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/Screenshot_Google_maps.png" alt="web_view">
 
 # How to:
 For Windows i used Python version 3.6.x with Qt5 from <a href="https://winpython.github.io/">winpython</a>.
@@ -21,6 +21,12 @@ Google Maps is used for <i>online</i> calculation
 
 Data obtained from the satellite is used for <i>offline</i> calculation, 
 they are converted in the QGIS program from images to geojson data.
+
+You may change (build v.1.0):
+ - data base from 5m to 1m accuracy - line 72 "GeoJson.py" <code>db = sqlite3.connect('elev_5m.db')</code>;
+ - number of points per km:
+    - line 35 in "GeoJson.py" <code>number_of_points = int(d_ab) * <b>1</b></code>
+    - line 212 in "create_ui.py" <code>'samples': ''' + str(<b>1</b> * GeoJson.number_of_points) + '''</code>
 
 # TODO:
 - <s>redo the program data exchange with the server;</s>
