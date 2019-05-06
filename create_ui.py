@@ -294,7 +294,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                             // https://developers.google.com/maps/documentation/javascript/localization
                         </script>
                         <script async defer
-                            src="https://maps.googleapis.com/maps/api/js?v=quarterly&key=AIzaSyDIEAksFJ1CxnEaPudrekX1RuPhuBU0Gno&libraries=geometry&callback=initMap&language=ru&region=BY">
+                            src="https://maps.googleapis.com/maps/api/YOUR_API">
                         </script>
                     </div>
                 </body>

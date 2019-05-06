@@ -2,7 +2,6 @@ import json
 import sqlite3
 import time
 
-import geojson
 import math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +9,7 @@ import numpy as np
 print("Please wait! Running...")
 start_time_0 = time.perf_counter()  # time.perf_counter, time.process_time
 
-run_geojson = True
+run_geojson = False
 number_of_points = 0
 elev_min = np.zeros(number_of_points)
 d_ab = 0
@@ -74,9 +73,6 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     cursor = db.cursor()
 
     try:
-        # max_id = cursor.execute("SELECT MAX(id) FROM elevation").fetchone()
-        # print("\tMAX(id): " + str(max_id[0] + 100))
-
         for row in cursor.execute("SELECT * FROM elevation"):
             start_time_i = time.perf_counter()  # timer for benchmarking
             lng = row[1]
@@ -170,19 +166,13 @@ def plot_elevation_in_separate_window():
     print("GeoJson: plot_elevation()")
 
     x = range(0, number_of_points)
-
     y1 = np.zeros(number_of_points)
-    s = 0
     for q in range(0, number_of_points):
-        y1[q] = elev_min[q] + math.sin(s)
-        s += np.pi / number_of_points
-
-    y2 = range(0, len(d_min))
-    y3 = [1, 3, 5, 7, 9]
+        y1[q] = elev_min[q]
 
     labels = ["elev_min_5m ", "d_min", "Odds"]
     fig, ax = plt.subplots()
-    ax.stackplot(x, y1, labels=labels)  # ax.stackplot(x, y1, y2, labels=labels)
+    ax.stackplot(x, y1, labels=labels)
     ax.legend(loc='upper left')
     fig.set_size_inches(15, 5)
 
@@ -192,8 +182,8 @@ def plot_elevation_in_separate_window():
     plt.show()
 
 
+# ------------------------------------- main --------------------------------------------- if need to test something
 if run_geojson:
-
     lat0a = 53.822975  # Вертники, h = 292
     lng0a = 27.087467
     lat0b = 52.911044  # Слуцк, h = 146

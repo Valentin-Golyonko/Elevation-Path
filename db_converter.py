@@ -1,6 +1,7 @@
 import sqlite3
-import geojson
 import time
+
+import geojson
 
 print("Please wait! Running...")
 start_time_0 = time.perf_counter()  # time.perf_counter, time.process_time
@@ -94,7 +95,7 @@ def open_db():
     print("open_db()")
     time_60 = time.perf_counter()
 
-    db = sqlite3.connect('test1.db')
+    db = sqlite3.connect('xxx.db')
     cursor = db.cursor()
 
     try:
@@ -119,7 +120,6 @@ def open_db():
 
 
 # ------------------------------------- main ---------------------------------------------
-
 open_geojson()
 
 test_geojson()
