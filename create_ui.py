@@ -1,16 +1,15 @@
 # from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets  +  QtWebEngineWidgets.QWebEngineView
 # from mplwidget import MplWidget
 
-import math
-import json
 import random
 import time
 
+import math
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
 
-from elevation_path import UiMainWindow
 import GeoJson
+from elevation_path import UiMainWindow
 
 
 class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
@@ -19,7 +18,8 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.setupUi(self)
         self.show()
 
-        GeoJson.open_geojson_5m()
+        # GeoJson.open_geojson_5m()
+        # GeoJson.open_geojson_1m()
 
         self.fill_forms()
 
@@ -48,7 +48,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
             elif self.rb_google_map.isChecked():
                 self.gv_osm_plot.hide()
-                self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 702))
+                self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 741))
 
                 self.load_google_maps()
         else:
@@ -212,7 +212,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                                 // Initiate the path request.
                                 elevator.getElevationAlongPath({
                                   'path': path,
-                                  'samples': 100
+                                  'samples': ''' + str(1 * GeoJson.number_of_points) + '''
                                 }, plotElevation);
                             }
 
@@ -294,7 +294,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                             // https://developers.google.com/maps/documentation/javascript/localization
                         </script>
                         <script async defer
-                            src="https://maps.googleapis.com/maps/api/YOUR API">
+                            src="https://maps.googleapis.com/maps/api/js?v=quarterly&key=AIzaSyDIEAksFJ1CxnEaPudrekX1RuPhuBU0Gno&libraries=geometry&callback=initMap&language=ru&region=BY">
                         </script>
                     </div>
                 </body>
@@ -374,4 +374,4 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.le_lat_b.setText(str(lat_b))
         self.le_lng_b.setText(str(lng_b))
 
-        print(" OK - fill_forms()")
+        print("\tOK - fill_forms()")

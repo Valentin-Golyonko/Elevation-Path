@@ -1,63 +1,26 @@
 import json
-import math
+import sqlite3
 import time
 
 import geojson
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 
 print("Please wait! Running...")
 start_time_0 = time.perf_counter()  # time.perf_counter, time.process_time
 
-test_json = False
-run_geojson = False
+run_geojson = True
 number_of_points = 0
 elev_min = np.zeros(number_of_points)
 d_ab = 0
 max_betta_a = 0.0
 max_betta_b = 0.0
+i_beta_a = 0
+i_beta_b = 0
 
 
 # --------------------------------- methods ---------------------------------------
-def open_geojson_5m():
-    print("opening blr_elev_5m_v2")
-    global data
-    with open('blr_elev_5m_v2.geojson') as f:  # blr_elev_1m_v1.geojson / blr_elev_5m_v2.geojson / test.geojson
-        data = geojson.load(f)
-
-    time_1 = time.perf_counter() - start_time_0
-    print("\ttime_1: " + str(time_1))
-
-
-def open_geojson_1m():
-    print("opening blr_elev_1m_v1")
-    global data
-    with open('blr_elev_1m_v1.geojson') as f:  # blr_elev_1m_v1.geojson / blr_elev_5m_v2.geojson / test.geojson
-        data = geojson.load(f)
-
-    time_1 = time.perf_counter() - start_time_0
-    print("\ttime_1: " + str(time_1))
-
-
-def test_geojson():
-    count = 0
-    len_arr = 0
-
-    for feature_t in data['features']:
-        arr_t = feature_t['geometry']['coordinates']
-
-        if len(arr_t) > 1:
-            len_arr += 1
-
-        for i in arr_t[0]:
-            count += 1
-            lng = i[0]
-            lat = i[1]
-            elev = feature_t['properties']['ELEV']
-            # print(str(count) + ": " + str(lng) + " " + str(lat) + " " + str(elev))
-    print("len_arr = " + str(len_arr) + "; count = " + str(count))
-
-
 def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     global elev_min, latlng_min, number_of_points, d_min, d_ab
     time_20 = time.perf_counter()
@@ -70,7 +33,7 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     d_ab = distance(lat_0_a, lng_0_a, lat_0_b, lng_0_b)
     print("d_ab: " + str(d_ab) + " km")
 
-    number_of_points = int(d_ab)  # количество точек на маршруте
+    number_of_points = int(d_ab) * 1  # количество точек на маршруте
 
     dif_coord_per_point = [math.fabs(lat_0_a - lat_0_b) / number_of_points,  # расстояние в градусах между каждой из
                            math.fabs(lng_0_a - lng_0_b) / number_of_points]  # соседних точек на маршруте А - В,
@@ -102,22 +65,23 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     p_len = 0
     time_i = 0
     arr_len = 0
-    time_f = 0
-    f_len = 0
     abs_if = 0
 
     time_22 = time.perf_counter() - time_20
     print("\ttime_2.2: " + str(time_22))
 
-    for feature in data['features']:
-        start_time_f = time.perf_counter()  # timer for benchmarking
-        arr = feature['geometry']['coordinates'][0]  # ex. from .geojson - "ing", "coordinates": [ [ [ 24.418315, "
-        elev = feature['properties']['ELEV']
+    db = sqlite3.connect('elev_5m.db')
+    cursor = db.cursor()
 
-        for poi in arr:
+    try:
+        # max_id = cursor.execute("SELECT MAX(id) FROM elevation").fetchone()
+        # print("\tMAX(id): " + str(max_id[0] + 100))
+
+        for row in cursor.execute("SELECT * FROM elevation"):
             start_time_i = time.perf_counter()  # timer for benchmarking
-            lng = poi[0]
-            lat = poi[1]
+            lng = row[1]
+            lat = row[0]
+            elev = row[2]
             ilat = int(lat)
             ilng = int(lng)
 
@@ -149,27 +113,29 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
                         p_len += 1
             time_i += time.perf_counter() - start_time_i
             arr_len += 1
-        time_f += time.perf_counter() - start_time_f
-        f_len += 1
+
+    except sqlite3.DatabaseError as err:
+        print("\tError: ", err)
+    else:
+        db.commit()
+    db.close()
 
     # show timers (benchmark)
     print("\ttime_x: " + str(time_x / p_len) + " p_len: " + str(p_len) + " sum: " + str(time_x) +
           " abs_if: " + str(abs_if) +
-          "\n\ttime_i: " + str(time_i / arr_len) + " arr_len: " + str(arr_len) + " sum: " + str(time_i) +
-          "\n\ttime_f: " + str(time_f / f_len) + " f_len: " + str(f_len) + " sum: " + str(time_f))
+          "\n\ttime_i: " + str(time_i / arr_len) + " arr_len: " + str(arr_len) + " sum: " + str(time_i))
 
     print("[" + str(len(latlng_min)) + "] latlng_min: " + str(latlng_min) +
           "\n[" + str(len(elev_min)) + "] elev_min: " + str(elev_min) +
           "\n[" + str(len(d_min)) + "] d_min: " + str(d_min))
 
     time_23 = time.perf_counter() - time_20
-    print("\ttime_2.3: " + str(time_23))
+    print("\ttime_2.3: " + str(time_23) + " (" + str(time_23 / 60) + " min)")
     time_3 = time.perf_counter() - start_time_0
-    print("\ttime_3: " + str(time_3))
+    print("\ttime_3: " + str(time_3) + " (" + str(time_3 / 60) + " min)")
 
 
 def distance(lat_a, lng_a, lat_b, lng_b, ):
-    # formula from Wiki
     rad_lat_a = math.radians(lat_a)
     rad_lat_b = math.radians(lat_b)
     rad_lng_a = math.radians(lng_a)
@@ -192,7 +158,7 @@ def create_json(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
         "path": latlng_min,
         # "elev": elevation
     }
-    with open("/home/bequite//PycharmProjects/Horizon/html/test.json", "w") as write_file:  # TODO: 'user'
+    with open("html/test.json", "w") as write_file:  # TODO: 'user'
         json.dump(json_data, write_file)
         # write_file.close()
 
@@ -226,23 +192,15 @@ def plot_elevation_in_separate_window():
     plt.show()
 
 
-# ------------------------------------- main ---------------------------------------------
-if test_json:
-
-    test_geojson()
-
-    time_all = time.perf_counter() - start_time_0
-    print("\ttime_all: " + str(time_all) + "\n")
-
-elif run_geojson:
+if run_geojson:
 
     lat0a = 53.822975  # Вертники, h = 292
     lng0a = 27.087467
     lat0b = 52.911044  # Слуцк, h = 146
     lng0b = 27.691194
-
-    open_geojson_5m()
-    # open_geojson_1m()
+    # d_ab: 109.148167 km
+    # time_2.1: 0.0002782 s
+    # time_2.3: 5.1453380 s
 
     find_points(lat0a, lng0a, lat0b, lng0b)
 

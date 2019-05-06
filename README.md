@@ -10,7 +10,10 @@ google map, elevation 100 points per path -
 <img src="https://github.com/Valentin-Golyonko/Elevation-Path/blob/master/images/google%20map%2C%20elevation%20512%20points%20per%20path.png" alt="web_view">
 
 # How to:
-OpenStreetMap server is installed on Ubuntu 18.10 using
+For Windows i used Python version 3.6.x with Qt5 from <a href="https://winpython.github.io/">winpython</a>.
+For Ubuntu all working good without any custom manipulations (python 3.7). 
+
+OpenStreetMap server is installed on Ubuntu 19.04 (+ tested on 18.04 and 18.10) using
 <a href="https://switch2osm.org/manually-building-a-tile-server-18-04-lts/">Manually building a tile server (18.04 LTS)</a>
 
 Google Maps is used for <i>online</i> calculation
@@ -22,6 +25,6 @@ they are converted in the QGIS program from images to geojson data.
 # TODO:
 - <s>redo the program data exchange with the server;</s>
 - connection error with local (WAN) server;
-- database;
+- <s>database;</s>
 - multithreading;
 - 
