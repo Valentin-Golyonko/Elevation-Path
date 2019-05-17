@@ -4,7 +4,6 @@
 import random
 import time
 
-import math
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
 
@@ -64,18 +63,26 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         longitude_b = self.input_check(self.le_lng_b.text(), self.le_lng_b)
 
     def plot_elevation(self):
+        nop = GeoJson.number_of_points
+        elev = GeoJson.elev_min
+        e_height = GeoJson.earth_height(latitude_a, longitude_a, latitude_b, longitude_b)
+
+        x1 = np.linspace(0, nop, num=nop)
+        y1 = np.sin(2 * np.pi * x1 / (nop * 2)) * (e_height * 1000)
+        y2 = [0.0] * x1
+        for q in range(0, nop):
+            y2[q] = elev[q]
+
         # clear the Axes to ensure that the next plot will seem a completely new one
         self.gv_osm_plot.canvas.ax.clear()
 
-        nop = GeoJson.number_of_points
-        x = range(0, nop)
-        y = np.zeros(nop)
-        s = 0
-        for q in range(0, nop):
-            y[q] = GeoJson.elev_min[q] + math.sin(s)
-            s += np.pi / nop
+        labels = ["земля " + format(e_height, '.3f') + " m", "высоты"]
+        self.gv_osm_plot.canvas.ax.stackplot(x1, y1, y2, labels=labels)
 
-        self.gv_osm_plot.canvas.ax.stackplot(x, y)
+        self.gv_osm_plot.canvas.ax.grid(True)
+        # self.gv_osm_plot.canvas.fig.legend()
+        self.gv_osm_plot.canvas.fig.tight_layout(None, 0.7, 0.7, 0.7, None)
+        self.gv_osm_plot.canvas.ax.autoscale(enable=True, axis='both', tight=False)
         self.gv_osm_plot.canvas.draw()
 
     def load_osm_map(self):

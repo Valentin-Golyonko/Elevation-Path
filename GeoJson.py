@@ -143,6 +143,21 @@ def distance(lat_a, lng_a, lat_b, lng_b, ):
     return dist
 
 
+def earth_height(lat_a, lng_a, lat_b, lng_b):
+    r = 6378.137  # 6363.513 = for BLR \ Minsk; evr = 6378.137 km
+
+    rad_lat_a = math.radians(lat_a)
+    rad_lat_b = math.radians(lat_b)
+    rad_lng_a = math.radians(lng_a)
+    rad_lng_b = math.radians(lng_b)
+
+    central_angle = math.acos(math.sin(rad_lat_a) * math.sin(rad_lat_b) +
+                              math.cos(rad_lat_a) * math.cos(rad_lat_b) * math.cos(rad_lng_a - rad_lng_b))  # radians
+
+    earth_h = r - (r * math.cos(central_angle / 2))  # km, высота земной поверхности дан хордой
+    return earth_h
+
+
 def create_json(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     print("GeoJson: create_json()")
 
