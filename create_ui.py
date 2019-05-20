@@ -37,7 +37,6 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                 # calculate GeoJson data
                 GeoJson.find_points(latitude_a, longitude_a, latitude_b, longitude_b)
                 GeoJson.create_json(latitude_a, longitude_a, latitude_b, longitude_b)
-                # GeoJson.plot_path()
 
                 self.plot_elevation()
                 self.load_osm_map()
@@ -80,7 +79,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.gv_osm_plot.canvas.ax.stackplot(x1, y1, y2, labels=labels)
 
         self.gv_osm_plot.canvas.ax.grid(True)
-        # self.gv_osm_plot.canvas.fig.legend()
+        self.gv_osm_plot.canvas.fig.legend()
         self.gv_osm_plot.canvas.fig.tight_layout(None, 0.7, 0.7, 0.7, None)
         self.gv_osm_plot.canvas.ax.autoscale(enable=True, axis='both', tight=False)
         self.gv_osm_plot.canvas.draw()

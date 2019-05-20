@@ -155,6 +155,7 @@ def earth_height(lat_a, lng_a, lat_b, lng_b):
                               math.cos(rad_lat_a) * math.cos(rad_lat_b) * math.cos(rad_lng_a - rad_lng_b))  # radians
 
     earth_h = r - (r * math.cos(central_angle / 2))  # km, высота земной поверхности дан хордой
+    print("\tearth_height = " + str(earth_h))
     return earth_h
 
 
