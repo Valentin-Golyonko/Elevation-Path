@@ -24,11 +24,6 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     global elev_min, latlng_min, number_of_points, d_min, d_ab
     time_20 = time.perf_counter()
 
-    max_lat = int(max(lat_0_a, lat_0_b)) + 1  # int(53.8) = 53
-    max_lng = int(max(lng_0_a, lng_0_b)) + 1  # so, if lat_0_a = 53.822975, lat_0_b = 52.911044
-    min_lat = int(min(lat_0_a, lat_0_b))  # range(min_lat, max_lat) = 52, 53
-    min_lng = int(min(lng_0_a, lng_0_b))  # step = 1
-
     d_ab = distance(lat_0_a, lng_0_a, lat_0_b, lng_0_b)
     print("d_ab: " + str(d_ab) + " km")
 
@@ -66,6 +61,12 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     arr_len = 0
     abs_if = 0
 
+    max_lat = int(max(lat_0_a, lat_0_b)) + 1  # int(53.8) = 53
+    max_lng = int(max(lng_0_a, lng_0_b)) + 1  # so, if lat_0_a = 53.822975, lat_0_b = 52.911044
+    min_lat = int(min(lat_0_a, lat_0_b))  # range(min_lat, max_lat) = 52, 53
+    min_lng = int(min(lng_0_a, lng_0_b))  # step = 1
+    row = []
+
     time_22 = time.perf_counter() - time_20
     print("\ttime_2.2: " + str(time_22))
 
@@ -73,49 +74,46 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     cursor = db.cursor()
 
     try:
-        for row in cursor.execute("SELECT * FROM elevation" +
-                                  " WHERE lat BETWEEN " + str(min_lat) + " AND " + str(max_lat) +
-                                  " AND lng BETWEEN " + str(min_lng) + " AND " + str(max_lng)):
-            start_time_i = time.perf_counter()  # timer for benchmarking
-            lng = row[1]
-            lat = row[0]
-            elev = row[2]
-            ilat = int(lat)
-            ilng = int(lng)
-
-            if ilat in range(min_lat, max_lat):  # (v1) summary speed up  = 18.2x, 1m(1093.9562 sec -> 60.0305 sec)
-                if ilng in range(min_lng, max_lng):  # (v2) 1m -> time_2.3: 16.39s, time_all: 39.01s ; 28x
-
-                    for x in range(0, number_of_points):
-                        start_time_x = time.perf_counter()  # timer for benchmarking
-                        lat_x = point_in_path[x][0]
-                        lng_x = point_in_path[x][1]
-
-                        abs_lat = math.fabs(lat_x - lat)
-                        abs_lng = math.fabs(lng_x - lng)
-                        if abs_lat < 0.00833 and abs_lng < 0.013:  # ~ 1 km; 4x speed up, 5m(192.06705 -> 47.2116)
-
-                            d_min_x = distance(lat_x, lng_x, lat, lng)
-                            if d_min_x < d_min[x]:
-                                latlng_min[x] = [lat, lng]
-                                elev_min[x] = elev
-                                d_min[x] = d_min_x
-                            elif latlng_min[x][0] == 0 and latlng_min[x][1] == 0:  # -3s speed up, 5m (NOT in one 'if')
-                                latlng_min[x] = [lat, lng]
-                                elev_min[x] = elev
-                                d_min[x] = d_min_x
-
-                            abs_if += 1  # number of 'good' points
-
-                        time_x += time.perf_counter() - start_time_x  # timers for benchmarking
-                        p_len += 1
-            time_i += time.perf_counter() - start_time_i
-            arr_len += 1
-
+        row = cursor.execute("SELECT * FROM elevation" +
+                             " WHERE lat BETWEEN " + str(min_lat) + " AND " + str(max_lat) +
+                             " AND lng BETWEEN " + str(min_lng) + " AND " + str(max_lng))
     except sqlite3.DatabaseError as err:
         print("\tError: ", err)
     else:
         db.commit()
+
+    for point in row:
+        start_time_i = time.perf_counter()  # timer for benchmarking
+        lng = point[1]
+        lat = point[0]
+        elev = point[2]
+
+        for x in range(0, number_of_points):
+            start_time_x = time.perf_counter()  # timer for benchmarking
+            lat_x = point_in_path[x][0]
+            lng_x = point_in_path[x][1]
+
+            abs_lat = math.fabs(lat_x - lat)
+            abs_lng = math.fabs(lng_x - lng)
+            if abs_lat < 0.00833 and abs_lng < 0.013:  # ~ 1 km; 4x speed up, 5m(192.06705 -> 47.2116)
+
+                d_min_x = distance(lat_x, lng_x, lat, lng)
+                if d_min_x < d_min[x]:
+                    latlng_min[x] = [lat, lng]
+                    elev_min[x] = elev
+                    d_min[x] = d_min_x
+                elif latlng_min[x][0] == 0 and latlng_min[x][1] == 0:  # -3s speed up, 5m (NOT in one 'if')
+                    latlng_min[x] = [lat, lng]
+                    elev_min[x] = elev
+                    d_min[x] = d_min_x
+
+                abs_if += 1  # number of 'good' points
+
+            time_x += time.perf_counter() - start_time_x  # timers for benchmarking
+            p_len += 1
+        time_i += time.perf_counter() - start_time_i
+        arr_len += 1
+
     db.close()
 
     # show timers (benchmark)
