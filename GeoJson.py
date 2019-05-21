@@ -69,11 +69,13 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     time_22 = time.perf_counter() - time_20
     print("\ttime_2.2: " + str(time_22))
 
-    db = sqlite3.connect('elev_5m.db')
+    db = sqlite3.connect('elev_1m.db')
     cursor = db.cursor()
 
     try:
-        for row in cursor.execute("SELECT * FROM elevation"):
+        for row in cursor.execute("SELECT * FROM elevation" +
+                                  " WHERE lat BETWEEN " + str(min_lat) + " AND " + str(max_lat) +
+                                  " AND lng BETWEEN " + str(min_lng) + " AND " + str(max_lng)):
             start_time_i = time.perf_counter()  # timer for benchmarking
             lng = row[1]
             lat = row[0]
