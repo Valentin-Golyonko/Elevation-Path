@@ -1,7 +1,6 @@
 # from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets  +  QtWebEngineWidgets.QWebEngineView
 # from mplwidget import MplWidget
 
-import random
 import time
 
 import numpy as np
@@ -367,10 +366,15 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
         self.webView.setUrl(QtCore.QUrl("http://localhost/index.html"))
 
-        lat_a = random.randint(53156653, 54082254) / 1000000
-        lng_a = random.randint(24884033, 26976929) / 1000000
-        lat_b = random.randint(53156653, 54082254) / 1000000
-        lng_b = random.randint(24884033, 26976929) / 1000000
+        # lat_a = random.randint(53156653, 54082254) / 1000000
+        # lng_a = random.randint(24884033, 26976929) / 1000000
+        # lat_b = random.randint(53156653, 54082254) / 1000000
+        # lng_b = random.randint(24884033, 26976929) / 1000000
+
+        lat_a = 53.822975
+        lng_a = 27.087467
+        lat_b = 52.911044
+        lng_b = 27.691194
 
         self.le_lat_a.setText(str(lat_a))
         self.le_lng_a.setText(str(lng_a))

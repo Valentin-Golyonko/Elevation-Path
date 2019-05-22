@@ -1,4 +1,5 @@
 import json
+import multiprocessing as mp
 import sqlite3
 import time
 
@@ -11,27 +12,64 @@ start_time_0 = time.perf_counter()  # time.perf_counter, time.process_time
 
 run_geojson = False
 number_of_points = 0
-elev_min = np.zeros(number_of_points)
 d_ab = 0
 max_betta_a = 0.0
 max_betta_b = 0.0
 i_beta_a = 0
 i_beta_b = 0
+d_min = [0.0]
+elev_min = [0.0]
+latlng_min = [[0.0, 0.0]]
+time_x = 0
+p_len = 0
+abs_if = 0
 
 
 # --------------------------------- methods ---------------------------------------
+def main_calculation(p):
+    global d_min, elev_min, latlng_min, time_x, p_len, abs_if
+    lat = p[0]
+    lng = p[1]
+    elev = p[2]
+
+    for x in range(0, number_of_points):
+        start_time_x = time.perf_counter()  # timer for benchmarking
+        lat_x = point_in_path[x][0]
+        lng_x = point_in_path[x][1]
+
+        abs_lat = math.fabs(lat_x - lat)
+        abs_lng = math.fabs(lng_x - lng)
+        if abs_lat < 0.00833 and abs_lng < 0.013:  # ~ 1 km; 4x speed up, 5m(192.06705 -> 47.2116)
+
+            d_min_x = distance(lat_x, lng_x, lat, lng)
+            if d_min_x < d_min[x]:
+                latlng_min[x] = [lat, lng]
+                elev_min[x] = elev
+                d_min[x] = d_min_x
+            elif latlng_min[x][0] == 0 and latlng_min[x][1] == 0:  # -3s speed up, 5m (NOT in one 'if')
+                latlng_min[x] = [lat, lng]
+                elev_min[x] = elev
+                d_min[x] = d_min_x
+
+            abs_if += 1  # number of 'good' points
+        time_x += time.perf_counter() - start_time_x  # timers for benchmarking
+        p_len += 1
+
+    return [time_x, p_len, abs_if]
+
+
 def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
-    global elev_min, latlng_min, number_of_points, d_min, d_ab
+    global number_of_points, d_ab, point_in_path, time_x, p_len, abs_if, d_min, elev_min, latlng_min
     time_20 = time.perf_counter()
 
     d_ab = distance(lat_0_a, lng_0_a, lat_0_b, lng_0_b)
-    print("d_ab: " + str(d_ab) + " km")
+    print("\td_ab: " + str(d_ab) + " km")
 
     number_of_points = int(d_ab) * 1  # количество точек на маршруте
 
     dif_coord_per_point = [math.fabs(lat_0_a - lat_0_b) / number_of_points,  # расстояние в градусах между каждой из
                            math.fabs(lng_0_a - lng_0_b) / number_of_points]  # соседних точек на маршруте А - В,
-    print("dif_coord_per_point: " + str(dif_coord_per_point))
+    print("\tdif_coord_per_point: " + str(dif_coord_per_point))
 
     point_in_path = []  # np.zeros([number_of_points + 1, 2])       # 3x slower using numpy
     for cp in range(0, number_of_points, 1):  # нахождение Х точек на маршруте; int(number_of_points / 2)
@@ -46,30 +84,16 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
 
     point_in_path.append([lat_0_b, lng_0_b])  # add point 'B'
     number_of_points += 1
-    print("point_in_path: " + str(point_in_path))
+    print("\tpoint_in_path: " + str(point_in_path))
 
     time_21 = time.perf_counter() - time_20
     print("\ttime_2.1: " + str(time_21))
-
-    d_min = np.zeros(number_of_points)  # np.zeros(number_of_points) ; [0.0] * p
-    elev_min = np.zeros(number_of_points)  # np.zeros(number_of_points) ; [0.0] * p
-    latlng_min = [[0.0, 0.0]] * number_of_points  # np.zeros([p, 2]) ; [[0.0, 0.0]] * p
-
-    time_x = 0  # timers for benchmarking
-    p_len = 0
-    time_i = 0
-    arr_len = 0
-    abs_if = 0
 
     max_lat = int(max(lat_0_a, lat_0_b)) + 1  # int(53.8) = 53
     max_lng = int(max(lng_0_a, lng_0_b)) + 1  # so, if lat_0_a = 53.822975, lat_0_b = 52.911044
     min_lat = int(min(lat_0_a, lat_0_b))  # range(min_lat, max_lat) = 52, 53
     min_lng = int(min(lng_0_a, lng_0_b))  # step = 1
     row = []
-
-    time_22 = time.perf_counter() - time_20
-    print("\ttime_2.2: " + str(time_22))
-
     db = sqlite3.connect('elev_1m.db')
     cursor = db.cursor()
 
@@ -82,43 +106,36 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     else:
         db.commit()
 
+    time_22 = time.perf_counter() - time_20
+    print("\ttime_2.2: " + str(time_22))
+
+    time_i = 0  # timers for benchmarking
+    arr_len = 0
+    timex = [0.0, 0, 0]
+    time_x = 0
+    p_len = 0
+    abs_if = 0
+
+    d_min = np.zeros(number_of_points)  # np.zeros(number_of_points) ; [0.0] * p
+    elev_min = np.zeros(number_of_points)  # np.zeros(number_of_points) ; [0.0] * p
+    latlng_min = [[0.0, 0.0]] * number_of_points  # np.zeros([p, 2]) ; [[0.0, 0.0]] * p
+
     for point in row:
         start_time_i = time.perf_counter()  # timer for benchmarking
-        lng = point[1]
-        lat = point[0]
-        elev = point[2]
 
-        for x in range(0, number_of_points):
-            start_time_x = time.perf_counter()  # timer for benchmarking
-            lat_x = point_in_path[x][0]
-            lng_x = point_in_path[x][1]
+        p = mp.Process(target=main_calculation, args=(point,))
+        p.start()
+        p.join()
+        # timex = main_calculation(point)
 
-            abs_lat = math.fabs(lat_x - lat)
-            abs_lng = math.fabs(lng_x - lng)
-            if abs_lat < 0.00833 and abs_lng < 0.013:  # ~ 1 km; 4x speed up, 5m(192.06705 -> 47.2116)
-
-                d_min_x = distance(lat_x, lng_x, lat, lng)
-                if d_min_x < d_min[x]:
-                    latlng_min[x] = [lat, lng]
-                    elev_min[x] = elev
-                    d_min[x] = d_min_x
-                elif latlng_min[x][0] == 0 and latlng_min[x][1] == 0:  # -3s speed up, 5m (NOT in one 'if')
-                    latlng_min[x] = [lat, lng]
-                    elev_min[x] = elev
-                    d_min[x] = d_min_x
-
-                abs_if += 1  # number of 'good' points
-
-            time_x += time.perf_counter() - start_time_x  # timers for benchmarking
-            p_len += 1
         time_i += time.perf_counter() - start_time_i
         arr_len += 1
 
     db.close()
 
     # show timers (benchmark)
-    print("\ttime_x: " + str(time_x / p_len) + " p_len: " + str(p_len) + " sum: " + str(time_x) +
-          " abs_if: " + str(abs_if) +
+    print("\ttime_x: " + str(timex[0] / timex[1]) + " p_len: " + str(timex[1]) + " sum: " + str(timex[0]) +
+          " abs_if: " + str(timex[2]) +
           "\n\ttime_i: " + str(time_i / arr_len) + " arr_len: " + str(arr_len) + " sum: " + str(time_i))
 
     print("[" + str(len(latlng_min)) + "] latlng_min: " + str(latlng_min) +
