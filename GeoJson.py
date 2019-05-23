@@ -10,7 +10,7 @@ import multiprocessing as mp
 print("Please wait! Running...")
 start_time_0 = time.perf_counter()  # time.perf_counter, time.process_time
 
-run_geojson = True
+run_geojson = False
 number_of_points = 0
 d_ab = 0
 max_betta_a = 0.0
@@ -129,7 +129,6 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
         start_time_i = time.perf_counter()  # timer for benchmarking
 
         for x in range(0, number_of_points):
-            # start_time_x = time.perf_counter()  # timer for benchmarking
             lat_x = point_in_path[x][0]
             lng_x = point_in_path[x][1]
             # p = mp.Process(target=main_calculation, args=(point, x, lat_x, lng_x))
@@ -231,7 +230,8 @@ if run_geojson:
     lng0b = 27.691194
     # d_ab: 109.148167 km
     # time_2.1: 0.0002782 s
-    # time_2.3: 5.1453380 s
+    # time_2.3: 5.1453380 s     5m
+    # time_2.3: 12-16 s     1m
 
     find_points(lat0a, lng0a, lat0b, lng0b)
 
