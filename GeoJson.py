@@ -1,11 +1,11 @@
 import json
-import multiprocessing as mp
 import sqlite3
 import time
 
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import multiprocessing as mp
 
 print("Please wait! Running...")
 start_time_0 = time.perf_counter()  # time.perf_counter, time.process_time
@@ -26,36 +26,40 @@ abs_if = 0
 
 
 # --------------------------------- methods ---------------------------------------
-def main_calculation(p):
-    global d_min, elev_min, latlng_min, time_x, p_len, abs_if
+def main_calculation(p, x, lat_x, lng_x):
+    global d_min, elev_min, latlng_min, abs_if, time_x, p_len
+    # print("mc(), " + str(p))
     lat = p[0]
     lng = p[1]
     elev = p[2]
 
-    for x in range(0, number_of_points):
-        start_time_x = time.perf_counter()  # timer for benchmarking
-        lat_x = point_in_path[x][0]
-        lng_x = point_in_path[x][1]
+    # for x in range(0, number_of_points):
+    start_time_x = time.perf_counter()  # timer for benchmarking
+    #     lat_x = point_in_path[x][0]
+    #     lng_x = point_in_path[x][1]
 
-        abs_lat = math.fabs(lat_x - lat)
-        abs_lng = math.fabs(lng_x - lng)
-        if abs_lat < 0.00833 and abs_lng < 0.013:  # ~ 1 km; 4x speed up, 5m(192.06705 -> 47.2116)
+    abs_lat = math.fabs(lat_x - lat)
+    abs_lng = math.fabs(lng_x - lng)
+    if abs_lat < 0.00833 and abs_lng < 0.013:  # ~ 1 km; 4x speed up, 5m(192.06705 -> 47.2116)
 
-            d_min_x = distance(lat_x, lng_x, lat, lng)
-            if d_min_x < d_min[x]:
-                latlng_min[x] = [lat, lng]
-                elev_min[x] = elev
-                d_min[x] = d_min_x
-            elif latlng_min[x][0] == 0 and latlng_min[x][1] == 0:  # -3s speed up, 5m (NOT in one 'if')
-                latlng_min[x] = [lat, lng]
-                elev_min[x] = elev
-                d_min[x] = d_min_x
+        d_min_x = distance(lat_x, lng_x, lat, lng)
+        # print("dminx = " + str(d_min_x))
+        if d_min_x < d_min[x]:
+            latlng_min[x] = [lat, lng]
+            elev_min[x] = elev
+            d_min[x] = d_min_x
+            # print("\tpoint " + str(x))
+        elif latlng_min[x][0] == 0 and latlng_min[x][1] == 0:  # -3s speed up, 5m (NOT in one 'if')
+            latlng_min[x] = [lat, lng]
+            elev_min[x] = elev
+            d_min[x] = d_min_x
+            # print("\tpoint0 " + str(x))
 
-            abs_if += 1  # number of 'good' points
-        time_x += time.perf_counter() - start_time_x  # timers for benchmarking
-        p_len += 1
+        abs_if += 1  # number of 'good' points
+    time_x += time.perf_counter() - start_time_x  # timers for benchmarking
+    p_len += 1
 
-    return [time_x, p_len, abs_if]
+    # return [time_x, p_len, abs_if]
 
 
 def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
@@ -111,7 +115,7 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
 
     time_i = 0  # timers for benchmarking
     arr_len = 0
-    timex = [0.0, 0, 0]
+    # timex = [0.0, 0, 0]
     time_x = 0
     p_len = 0
     abs_if = 0
@@ -120,23 +124,26 @@ def find_points(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     elev_min = np.zeros(number_of_points)  # np.zeros(number_of_points) ; [0.0] * p
     latlng_min = [[0.0, 0.0]] * number_of_points  # np.zeros([p, 2]) ; [[0.0, 0.0]] * p
 
+    p = 0
     for point in row:
         start_time_i = time.perf_counter()  # timer for benchmarking
 
-        p = mp.Process(target=main_calculation, args=(point,))
-        p.start()
-        p.join()
-        # timex = main_calculation(point)
+        for x in range(0, number_of_points):
+            lat_x = point_in_path[x][0]
+            lng_x = point_in_path[x][1]
+            # p = mp.Process(target=main_calculation, args=(point, x, lat_x, lng_x))
+            # p.start()
+            main_calculation(point, x, lat_x, lng_x)
 
         time_i += time.perf_counter() - start_time_i
         arr_len += 1
 
+    # p.join()
     db.close()
 
     # show timers (benchmark)
-    print("\ttime_x: " + str(timex[0] / timex[1]) + " p_len: " + str(timex[1]) + " sum: " + str(timex[0]) +
-          " abs_if: " + str(timex[2]) +
-          "\n\ttime_i: " + str(time_i / arr_len) + " arr_len: " + str(arr_len) + " sum: " + str(time_i))
+    print("\ttime_x: " + str(time_x / p_len) + " p_len: " + str(p_len) + " sum: " + str(time_x) + " abs_if: " + str(abs_if))
+    print("\ttime_i: " + str(time_i / arr_len) + " arr_len: " + str(arr_len) + " sum: " + str(time_i))
 
     print("[" + str(len(latlng_min)) + "] latlng_min: " + str(latlng_min) +
           "\n[" + str(len(elev_min)) + "] elev_min: " + str(elev_min) +
@@ -223,7 +230,8 @@ if run_geojson:
     lng0b = 27.691194
     # d_ab: 109.148167 km
     # time_2.1: 0.0002782 s
-    # time_2.3: 5.1453380 s
+    # time_2.3: 5.1453380 s     5m
+    # time_2.3: 12-16 s     1m
 
     find_points(lat0a, lng0a, lat0b, lng0b)
 

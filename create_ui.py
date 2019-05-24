@@ -5,6 +5,7 @@ import time
 
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
+import multiprocessing as mp
 
 import GeoJson
 from elevation_path import UiMainWindow
