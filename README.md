@@ -11,6 +11,7 @@ Online Google Maps, elevation accuracy 1 point per 1 km -
 
 # How to:
 Python:
+- Install PyQt5, PyQt5-sip, PyQtWebEngine, Matplotlib, NumPy, QtDesigner (to do UI), pyqt5-tools (convert .ui-file to .py-file)
 - For Windows i used Python version 3.6.x with Qt5 from <a href="https://winpython.github.io/">winpython</a>.
 - For Ubuntu all working good without any custom manipulations (python 3.7.x). 
 
