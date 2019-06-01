@@ -3,7 +3,30 @@ test # 1
 53.640679   26.527206
 54.051939   25.134053
 
-"SELECT * FROM elevation WHERE ...
+GeoJson TESTs:
+    # 06/01/2019 11:00, before MP
+        time_2.1: 0.001825900000000047
+        time_2.2: 0.5030789999999996
+        time_x: 4.521765876924353e-07 p_len: 20961710 sum: 9.478394499998398 abs_if: 5200
+        time_i: 0.00011328392955536532 arr_len: 190561 sum: 21.58749889999997
+        time_2.3: 23.1676265 (0.38612710833333336 min)                                      <- HERE
+        time_3: 32.3399166 (0.53899861 min)
+        time_4: 32.346546
+        time_6.1: 23.255903600000003 (0.3875983933333334 min)
+
+    # 06/01/2019 18:00, before MP, after BIG code refactoring
+        time_db: 0.31549119999999997
+        time_path: 0.0025751999999999997
+        time_i: 5.077797083348423e-05 arr_len: 190561 sum: 9.676300899999587
+        time_find_points: 10.2942916 (0.17157152666666667 min)                              <- HERE
+        time_create_json: 0.002531599999999301
+        time_all: 10.6269041
+        time_plot: 0.2500011000000004
+
+    # ?, with MP
+
+
+"SELECT * FROM elevation WHERE ...      # set borders
     time_2.1: 0.00036826599989581155
 	time_2.2: 0.0004017060000478523
 	time_x: 3.946428552615567e-07 p_len: 65925665 sum: 26.017092670616876 abs_if: 5015
@@ -11,7 +34,7 @@ test # 1
 	time_2.3: 38.7962396769999 (0.6466039946166651 min)         - 10 sec !!!
 	time_3: 40.65621745599947 (0.6776036242666578 min)
 
-"SELECT * FROM elevation"
+"SELECT * FROM elevation"       # without borders
     time_2.1: 0.0003367750005054404
 	time_2.2: 0.0003672120001283474
 	time_x: 3.8891504230376225e-07 p_len: 65925665 sum: 25.639482792378658 abs_if: 5015

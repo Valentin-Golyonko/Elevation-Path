@@ -1,23 +1,43 @@
-import multiprocessing as mp
+import concurrent.futures
 import time
 
+import math
 
-def f(x, y):
-    print("x= " + str(x) + " x+y= " + str(x + y))
+PRIMES = [
+    112272535095293,
+    112582705942171,
+    112272535095293,
+    115280095190773,
+    115797848077099,
+    1099726899285419]
 
 
-start_time = time.time()
-p = 0
-y = 0
-for i in range(0, 1000):
-    y += 1
-    # p = mp.Process(target=f, args=(i, y))
-    # p.start()
+def is_prime(n):
+    if n % 2 == 0:
+        return False
 
-    f(i, y)
+    sqrt_n = int(math.floor(math.sqrt(n)))
+    for i in range(3, sqrt_n + 1, 2):
+        if n % i == 0:
+            return False
+    return True
 
-# p.join()
 
-print(time.time() - start_time)
-# 0.0036513805389404297  poor Python
-# 0.6507318019866943     with MP
+def main():
+    t0 = time.perf_counter()
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for number, prime in zip(PRIMES, executor.map(is_prime, PRIMES)):
+            print('%d is prime: %s' % (number, prime))
+
+    # for number in PRIMES:
+    #     prime = is_prime(number)
+    #     print('%d is prime: %s' % (number, prime))
+
+    print("time: %.6f" % (time.perf_counter() - t0))
+
+
+if __name__ == '__main__':
+    main()
+
+# for = time: 3.236654 sec
+# executor = time: 1.483386 sec

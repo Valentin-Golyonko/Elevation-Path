@@ -10,7 +10,7 @@ start_time_0 = time.perf_counter()  # time.perf_counter, time.process_time
 def open_geojson():
     print("opening .geojson")
     global data
-    with open('xxx.geojson') as f:
+    with open('xxx.geojson', encoding="utf8") as f:
         data = geojson.load(f)
 
     time_1 = time.perf_counter() - start_time_0
