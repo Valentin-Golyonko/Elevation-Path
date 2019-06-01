@@ -10,7 +10,7 @@ start_time_0 = time.perf_counter()  # time.perf_counter, time.process_time
 def open_geojson():
     print("opening .geojson")
     global data
-    with open('xxx.geojson', encoding="utf8") as f:
+    with open('data/xxx.geojson', encoding="utf8") as f:
         data = geojson.load(f)
 
     time_1 = time.perf_counter() - start_time_0
@@ -46,7 +46,7 @@ def convert_geojson_to_db():
 
     time_30 = time.perf_counter()
 
-    i_db = sqlite3.connect('test.db')
+    i_db = sqlite3.connect('data/test.db')
     i_cursor = i_db.cursor()
 
     time_32 = time.perf_counter()
@@ -95,7 +95,7 @@ def open_db():
     print("open_db()")
     time_60 = time.perf_counter()
 
-    db = sqlite3.connect('xxx.db')
+    db = sqlite3.connect('data/xxx.db')
     cursor = db.cursor()
 
     try:

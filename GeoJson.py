@@ -8,10 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 print("Please wait! Running...")
-
 run_geojson = True
-
-
 # time_x = 0
 # p_len = 0
 # abs_if = 0
@@ -99,10 +96,11 @@ def find_points(row_db):
     # time_i: 4.337876795356802e-05 arr_len: 190561 sum: 8.266301399999875
     # time_find_points: 8.8459885 (0.14743314166666668 min)
 
-    # print("\ttime_x: " + str(time_x / p_len) + " p_len: " + str(p_len) + " sum: " + str(time_x) + " abs_if: " + str(abs_if))
+    # print("\ttime_x: " + str(time_x / p_len) + " p_len: " + str(p_len) + " sum: " + str(time_x) +
+    #       " abs_if: " + str(abs_if))
     print("\ttime_i: " + str(time_i / arr_len) + " arr_len: " + str(arr_len) + " sum: " + str(time_i))
     time_find_points = time.perf_counter() - time0_find_points
-    print("\ttime_find_points: " + str(time_find_points) + " (" + str(time_find_points / 60) + " min)")
+    print("\t!time_find_points: " + str(time_find_points) + " (" + str(time_find_points / 60) + " min)")
 
 
 def distance(lat_a, lng_a, lat_b, lng_b, ):
@@ -185,7 +183,7 @@ def open_db(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     min_lng = int(min(lng_0_a, lng_0_b))  # step = 1
 
     row = []
-    db = sqlite3.connect('elev_1m.db')
+    db = sqlite3.connect('data/elev_1m.db')
     cursor = db.cursor()
     try:
         row = cursor.execute("SELECT * FROM elevation" +
