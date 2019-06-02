@@ -24,10 +24,15 @@ ar_latlng_min = []
 
 
 # --------------------------------- methods ---------------------------------------
-def main(lat0a, lng0a, lat0b, lng0b):
+def main(ar_p):
     Logs.log_verbose("GeoJson: main()")
     start_time_0 = time.perf_counter()
     global path_points, ar_d_min, ar_elevation, ar_latlng_min, number_of_points
+
+    lat0a = ar_p[0]
+    lng0a = ar_p[1]
+    lat0b = ar_p[2]
+    lng0b = ar_p[3]
 
     db_list = open_db(lat0a, lng0a, lat0b, lng0b)
 
@@ -161,10 +166,10 @@ def find_points(row_db):
 
     # -------- BENCHMARK RESULT HERE --------
     time_find_points = time.perf_counter() - time0_find_points
-    Logs.log_info("\t!TIME_FIND_POINTS: " + str(time_find_points) + " sec (" + str(time_find_points / 60) + " min)")
+    Logs.log_warning("\tTIME_FIND_POINTS: " + str(time_find_points) + " sec (" + str(time_find_points / 60) + " min)")
     # for simple python without MP (ProcessPoolExecutor)
     # time_i: 4.337876795356802e-05 sec, arr_len: 190561 sum: 8.266301399999875
-    # !TIME_FIND_POINTS: 8.8459885 s (0.14743314166666668 min)
+    # TIME_FIND_POINTS: 8.8459885 s (0.14743314166666668 min)
     # For MP - no result !!!
 
 
@@ -272,6 +277,12 @@ def earth_height(lat_a, lng_a, lat_b, lng_b):
     return earth_h
 
 
+def do_it_with_mp(co):
+    with ProcessPoolExecutor() as ex:  # max_workers=4
+        re = ex.submit(main, co)
+        Logs.log_info("\tProcessPoolExecutor Done: " + str(re))
+
+
 # ------------------------------------- main --------------------------------------------- if need to test something
 if __name__ == '__main__':
     if run_geojson:
@@ -279,6 +290,19 @@ if __name__ == '__main__':
         lnga = 27.087467
         latb = 52.911044  # Слуцк, h = 146
         lngb = 27.691194
+        ar = [lata, lnga, latb, lngb]
         # d_ab: 109.148167 km
 
-        main(lata, lnga, latb, lngb)
+        # main(lata, lnga, latb, lngb)
+        # pr = []
+        # for i in range(1):
+        #     p = mp.Process(target=main, args=(lata, lnga, latb, lngb))
+        #     pr.append(p)
+        #     p.start()
+        # for prs in pr:
+        #     prs.join()
+
+        # !!! multiprocessing, multi threads
+        with ProcessPoolExecutor(max_workers=4) as executor:  # max_workers=4
+            rez = executor.submit(main, ar)
+            Logs.log_info("\tProcessPoolExecutor Done: " + str(rez))

@@ -27,7 +27,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         Logs.log_verbose("do_path()")
         time_60 = time.perf_counter()
 
-        self.get_points_ab()
+        ar_poi = self.get_points_ab()
 
         if latitude_a != -1 and longitude_a != -1 and latitude_b != -1 and longitude_b != -1:
             # select map server
@@ -36,7 +36,8 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                 self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 511))
 
                 # calculate GeoJson data
-                GeoJson.main(latitude_a, longitude_a, latitude_b, longitude_b)
+                GeoJson.main(ar_poi)
+                # GeoJson.do_it_with_mp(ar_poi)
 
                 self.plot_elevation()
                 self.load_osm_map()
@@ -60,6 +61,8 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         longitude_a = self.input_check(self.le_lng_a.text(), self.le_lng_a)
         latitude_b = self.input_check(self.le_lat_b.text(), self.le_lat_b)
         longitude_b = self.input_check(self.le_lng_b.text(), self.le_lng_b)
+
+        return [latitude_a, longitude_a, latitude_b, longitude_b]
 
     def plot_elevation(self):
         Logs.log_verbose("plot_elevation()")

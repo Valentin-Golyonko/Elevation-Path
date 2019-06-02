@@ -3,6 +3,10 @@ import time
 
 import math
 
+import logs.Log_Color as Logs
+
+Logs.log_start("start")
+
 PRIMES = [
     112272535095293,
     112582705942171,
@@ -27,13 +31,13 @@ def main():
     t0 = time.perf_counter()
     with concurrent.futures.ProcessPoolExecutor() as executor:
         for number, prime in zip(PRIMES, executor.map(is_prime, PRIMES)):
-            print('%d is prime: %s' % (number, prime))
+            Logs.log_info('%d is prime: %s' % (number, prime))
 
     # for number in PRIMES:
     #     prime = is_prime(number)
     #     print('%d is prime: %s' % (number, prime))
 
-    print("time: %.6f" % (time.perf_counter() - t0))
+    Logs.log_info("time: %.6f" % (time.perf_counter() - t0))
 
 
 if __name__ == '__main__':
