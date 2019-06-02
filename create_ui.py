@@ -2,10 +2,13 @@
 # from mplwidget import MplWidget
 
 import time
+
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
 
 import GeoJson
+import logs.Log_Color as Logs
+from api_key.keys import google_map_js_api
 from gui.elevation_path import UiMainWindow
 
 
@@ -21,7 +24,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
     #
     def do_path(self):
-        print("do_path()")
+        Logs.log_verbose("do_path()")
         time_60 = time.perf_counter()
 
         self.get_points_ab()
@@ -33,8 +36,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                 self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 511))
 
                 # calculate GeoJson data
-                GeoJson.find_points(latitude_a, longitude_a, latitude_b, longitude_b)
-                GeoJson.create_json(latitude_a, longitude_a, latitude_b, longitude_b)
+                GeoJson.main(latitude_a, longitude_a, latitude_b, longitude_b)
 
                 self.plot_elevation()
                 self.load_osm_map()
@@ -45,13 +47,13 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
                 self.load_google_maps()
         else:
-            print("\tcoordinates input ERROR")
+            Logs.log_info("\tcoordinates input ERROR")
 
         time_61 = time.perf_counter() - time_60
-        print("\ttime_6.1: " + str(time_61) + " (" + str(time_61 / 60) + " min)\n")
+        Logs.log_info("\ttime_6.1: " + str(time_61) + " (" + str(time_61 / 60) + " min)\n")
 
     def get_points_ab(self):
-        print("get_points_ab()")
+        Logs.log_verbose("get_points_ab()")
         global latitude_a, longitude_a, latitude_b, longitude_b
 
         latitude_a = self.input_check(self.le_lat_a.text(), self.le_lat_a)
@@ -60,8 +62,9 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         longitude_b = self.input_check(self.le_lng_b.text(), self.le_lng_b)
 
     def plot_elevation(self):
+        Logs.log_verbose("plot_elevation()")
         nop = GeoJson.number_of_points
-        elev = GeoJson.elev_min
+        elev = GeoJson.ar_elevation
         e_height = GeoJson.earth_height(latitude_a, longitude_a, latitude_b, longitude_b)
 
         x1 = np.linspace(0, nop, num=nop)
@@ -92,63 +95,55 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
     def load_google_maps(self):
         google_html_page = str('''
-                        <!DOCTYPE html>
-                        <html>
-                            <head>
-                                <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-                                <meta charset="utf-8">
-                                <title>Showing Elevation Along a Path</title>
-                                <style>
-                                    /* Always set the map height explicitly to define the size of the div
-                                    * element that contains the map. */
-                                    #map {
-                                        height: 100%;
-                                    }
-                                    /* Optional: Makes the sample page fill the window. */
-                                    html, body {
-                                        height: 100%;
-                                        margin: 0;
-                                        padding: 0;
-                                    }
-                                </style>
-                                <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-                                <script src="https://www.google.com/jsapi"></script>
-                            </head>
-                            <body>
-                                <div>
-                                    <div id="map" style="height:500px;"></div>
-                                    <div id="output" style="height: 25px">
-                                        <p>Расстояние: <input type="text" readonly id="distance_ab"> km;
-                                         Высота точки А: <input type="text" readonly id="a_hight"> m;
-                                         Высота точки Б: <input type="text" readonly id="b_hight"> m</p>
-                                    </div>
-                                    <div id="elevation_chart"></div>
-                                    <!--
-                                        <div id="t_a_hight"></div>
-                                        <div id="t_b_hight"></div>
-                                        <div id="t_d_ab"></div>
-                                        <div id="t_distance"></div>
-                                        <div id="t_elevation"></div>
-                                        <div id="t_result"></div>
-                                    -->
-                                    <script>
-                                        // Load the Visualization API and the columnchart package. corechart
-                                        google.load('visualization', '1', {packages: ['corechart']});
+                    <!DOCTYPE html>
+                    <html>
+                        <head>
+                            <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+                            <meta charset="utf-8">
+                            <title>Showing Elevation Along a Path</title>
+                            <style>
+                                /* Always set the map height explicitly to define the size of the div
+                                * element that contains the map. */
+                                #map {
+                                    height: 100%;
+                                }
+                                /* Optional: Makes the sample page fill the window. */
+                                html, body {
+                                    height: 100%;
+                                    margin: 0;
+                                    padding: 0;
+                                }
+                            </style>
+                            <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+                            <script src="https://www.google.com/jsapi"></script>
+                        </head>
+                        <body>
+                            <div>
+                                <div id="map" style="height:500px;"></div>
+                                <div id="output" style="height: 25px">
+                                    <p>Расстояние: <input type="text" readonly id="distance_ab"> km;
+                                     Высота точки А: <input type="text" readonly id="a_height"> m;
+                                     Высота точки Б: <input type="text" readonly id="b_height"> m</p>
+                                </div>
+                                <div id="elevation_chart"></div>
+                                <script>
+                                    // Load the Visualization API and the columnchart package. corechart
+                                    google.load('visualization', '1', {packages: ['corechart']});
 
-                                        var point_a_lat = 0;
-                                        var point_a_lng = 0;
-                                        var point_b_lat = 0;
-                                        var point_b_lng = 0;
-                                        var marker1, marker2;               // points A and B on the map
-                                        var point_a_hight, point_b_hight;   // hight of the points A and B
-                                        var distance_ab_km;                 // distance between points A and B
-                                        var point_distance = new Array();   // distance from A to point in the Path to B
-                                        var point_elevation = new Array();  // elevation of the avery point in the path AB
+                                    var point_a_lat = 0;
+                                    var point_a_lng = 0;
+                                    var point_b_lat = 0;
+                                    var point_b_lng = 0;
+                                    var marker1, marker2;               // points A and B on the map
+                                    var point_a_height, point_b_height; // height of the points A and B
+                                    var distance_ab_km;                 // distance between points A and B
+                                    var point_distance = new Array();   // distance from A to point in the Path to B
+                                    var point_elevation = new Array();  // elevation of the avery point in the path AB
 
-                                        loadJson();
+                                    loadJson();
 
-                                        function loadJson(){
-                                            '''
+                                    function loadJson(){
+                                        '''
                                + str("point_a_lat = " + str(latitude_a) + ";" +
                                      "point_a_lng = " + str(longitude_a) + ";" +
                                      "point_b_lat = " + str(latitude_b) + ";" +
@@ -213,95 +208,94 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                                 // Initiate the path request.
                                 elevator.getElevationAlongPath({
                                   'path': path,
-                                  'samples': ''' + str(1 * GeoJson.number_of_points) + '''
-                                }, plotElevation);
-                            }
+                                  'samples': ''' + str(2 * GeoJson.number_of_points) + '''
+                                        }, plotElevation);
+                                    }
 
-                            // Takes an array of ElevationResult objects, draws the path on the map
-                            // and plots the elevation profile on a Visualization API ColumnChart.
-                            function plotElevation(elevations, status) {
-                                var chartDiv = document.getElementById('elevation_chart');
-                                if (status !== 'OK') {
-                                    // Show the error code inside the chartDiv.
-                                    chartDiv.innerHTML = 'Cannot show elevation: request failed because ' +
-                                    status;
-                                    return;
-                                }
-                                // Create a new chart in the elevation_chart DIV.
-                                // Google chart tools: https://developers.google.com/chart/
-                                var chart = new google.visualization.AreaChart(chartDiv);
+                                    // Takes an array of ElevationResult objects, draws the path on the map
+                                    // and plots the elevation profile on a Visualization API ColumnChart.
+                                    function plotElevation(elevations, status) {
+                                        var chartDiv = document.getElementById('elevation_chart');
+                                        if (status !== 'OK') {
+                                            // Show the error code inside the chartDiv.
+                                            chartDiv.innerHTML = 'Cannot show elevation: request failed because ' +
+                                            status;
+                                            return;
+                                        }
+                                        // Create a new chart in the elevation_chart DIV.
+                                        // Google chart tools: https://developers.google.com/chart/
+                                        var chart = new google.visualization.AreaChart(chartDiv);
 
-                                var between_ab = [marker1.getPosition(), marker2.getPosition()];
-                                var distance_ab = 
-                                    google.maps.geometry.spherical.computeDistanceBetween(between_ab[0], between_ab[1]);
-                                var round_distance = Math.round(distance_ab);
-                                distance_ab_km = round_distance / 1000;
-                                document.getElementById('distance_ab').value = distance_ab_km;
+                                        var between_ab = [marker1.getPosition(), marker2.getPosition()];
+                                        var distance_ab = 
+                                            google.maps.geometry.spherical.computeDistanceBetween(between_ab[0], between_ab[1]);
+                                        var round_distance = Math.round(distance_ab);
+                                        distance_ab_km = round_distance / 1000;
+                                        document.getElementById('distance_ab').value = distance_ab_km;
 
-                                var e_length = elevations.length;
-                                point_a_hight = Math.round(elevations[0].elevation * 100) / 100;
-                                point_b_hight = Math.round(elevations[e_length - 1].elevation * 100) / 100;
-                                document.getElementById('a_hight').value = point_a_hight;
-                                document.getElementById('b_hight').value = point_b_hight;
+                                        var e_length = elevations.length;
+                                        point_a_height = Math.round(elevations[0].elevation * 100) / 100;
+                                        point_b_height = Math.round(elevations[e_length - 1].elevation * 100) / 100;
+                                        document.getElementById('a_height').value = point_a_height;
+                                        document.getElementById('b_height').value = point_b_height;
 
-                                // Extract the data from which to populate the chart.
-                                // Because the samples are equidistant, the 'Sample'
-                                // column here does double duty as distance along the X axis.
-                                var data = new google.visualization.DataTable();
-                                data.addColumn('string', 'UNIX');
-                                data.addColumn('number', 'Elevation');
-                                for (var i = 0; i < e_length; i++) {
-                                    var e_point = Math.round(elevations[i].elevation * 100) / 100;
-                                    var e_location = elevations[i].location;
-                                    var distance_a_e = 
-                                        google.maps.geometry.spherical.computeDistanceBetween(
-                                            marker1.getPosition(), e_location);
-                                    var d_point = Math.round(distance_a_e) / 1000;  // km
+                                        // Extract the data from which to populate the chart.
+                                        // Because the samples are equidistant, the 'Sample'
+                                        // column here does double duty as distance along the X axis.
+                                        var data = new google.visualization.DataTable();
+                                        data.addColumn('string', 'UNIX');
+                                        data.addColumn('number', 'Elevation');
+                                        for (var i = 0; i < e_length; i++) {
+                                            var e_point = Math.round(elevations[i].elevation * 100) / 100;
+                                            var e_location = elevations[i].location;
+                                            var distance_a_e = 
+                                                google.maps.geometry.spherical.computeDistanceBetween(
+                                                    marker1.getPosition(), e_location);
+                                            var d_point = Math.round(distance_a_e) / 1000;  // km
 
-                                    data.addRow(['' + d_point, e_point]);
+                                            data.addRow(['' + d_point, e_point]);
 
-                                    point_distance.push(String(d_point)); 
-                                    point_elevation.push(String(e_point)); 
-                                }
+                                            point_distance.push(String(d_point)); 
+                                            point_elevation.push(String(e_point)); 
+                                        }
 
-                                var options = {
-                                    titleY: 'Elevation (m)',
-                                    curveType: 'function',
-                                    legend: 'none',
-                                    height: 300,
-                                };
+                                        var options = {
+                                            titleY: 'Elevation (m)',
+                                            curveType: 'function',
+                                            legend: 'none',
+                                            height: 300,
+                                        };
 
-                                // Draw the chart using the data within its DIV.
-                                chart.draw(data, options);
+                                        // Draw the chart using the data within its DIV.
+                                        chart.draw(data, options);
 
-                                // Save data to JSON file
-                                /*
-                                    var json_distance_ab = JSON.stringify(String(distance_ab_km));
-                                    var json_a_hight = JSON.stringify(String(point_a_hight));
-                                    var json_b_hight = JSON.stringify(String(point_b_hight));
-                                    var json_distance = JSON.stringify(point_distance);
-                                    var json_elevation = JSON.stringify(point_elevation);
-                                    document.getElementById("t_d_ab").innerHTML = json_distance_ab;
-                                    document.getElementById("t_a_hight").innerHTML = json_a_hight;
-                                    document.getElementById("t_b_hight").innerHTML = json_b_hight;
-                                    document.getElementById("t_distance").innerHTML = json_distance;
-                                    document.getElementById("t_elevation").innerHTML = json_elevation;
-                                */
-                            }
+                                        // Save data to JSON file
+                                        /*
+                                            var json_distance_ab = JSON.stringify(String(distance_ab_km));
+                                            var json_a_height = JSON.stringify(String(point_a_height));
+                                            var json_b_height = JSON.stringify(String(point_b_height));
+                                            var json_distance = JSON.stringify(point_distance);
+                                            var json_elevation = JSON.stringify(point_elevation);
+                                            document.getElementById("t_d_ab").innerHTML = json_distance_ab;
+                                            document.getElementById("t_a_height").innerHTML = json_a_height;
+                                            document.getElementById("t_b_height").innerHTML = json_b_height;
+                                            document.getElementById("t_distance").innerHTML = json_distance;
+                                            document.getElementById("t_elevation").innerHTML = json_elevation;
+                                        */
+                                    }
 
-                            // Release channels and version numbers:
-                            // https://developers.google.com/maps/documentation/javascript/versions
-                            // Localizing the Map:
-                            // https://developers.google.com/maps/documentation/javascript/localization
-                        </script>
-                        <script async defer
-                            src="https://maps.googleapis.com/maps/api/YOUR_API">
-                        </script>
-                    </div>
-                </body>
-            </html>
-        ''')
-
+                                    // Release channels and version numbers:
+                                    // https://developers.google.com/maps/documentation/javascript/versions
+                                    // Localizing the Map:
+                                    // https://developers.google.com/maps/documentation/javascript/localization
+                                </script>
+                                <script async defer
+                                    src="https://maps.googleapis.com/maps/api/''' + str(google_map_js_api) + '''YOUR_API">
+                                </script>
+                            </div>
+                        </body>
+                    </html>
+                ''')
         self.webView.setHtml(google_html_page)
 
     # проверка неправильного ввода (посимвольный перебор)
@@ -361,7 +355,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
     # заполнение форм случайными значениями из диапазона
     def fill_forms(self):
-        print("fill_forms()")
+        Logs.log_verbose("fill_forms()")
 
         self.webView.setUrl(QtCore.QUrl("http://localhost/index.html"))
 
@@ -380,4 +374,4 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.le_lat_b.setText(str(lat_b))
         self.le_lng_b.setText(str(lng_b))
 
-        print("\tOK - fill_forms()")
+        Logs.log_info("\tOK - fill_forms()")

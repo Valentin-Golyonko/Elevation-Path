@@ -14,7 +14,7 @@ GeoJson TESTs:
         time_4: 32.346546
         time_6.1: 23.255903600000003 (0.3875983933333334 min)
 
-    # 06/01/2019 18:00, before MP, after BIG code refactoring
+    # 06/01/2019 18:00, before MP, after BIG code refactor
         time_db: 0.31549119999999997
         time_path: 0.0025751999999999997
         time_i: 5.077797083348423e-05 arr_len: 190561 sum: 9.676300899999587

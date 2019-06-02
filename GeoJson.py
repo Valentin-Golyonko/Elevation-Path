@@ -11,13 +11,16 @@ from matplotlib.widgets import Cursor
 import logs.Log_Color as Logs
 
 Logs.log_start("Please wait! Running...")
-run_geojson = True
-
+run_geojson = False
 
 # time_x = 0
 # p_len = 0
 # abs_if = 0
-# number_of_points = 110
+number_of_points = 0
+path_points = []
+ar_d_min = []
+ar_elevation = []
+ar_latlng_min = []
 
 
 # --------------------------------- methods ---------------------------------------
@@ -165,7 +168,7 @@ def find_points(row_db):
     # For MP - no result !!!
 
 
-def main_calculation(point):    # (position, path_points, ar_d_min, ar_elevation, ar_latlng_min, db_row)
+def main_calculation(point):  # (position, path_points, ar_d_min, ar_elevation, ar_latlng_min, db_row)
     global number_of_points, path_points, ar_d_min, ar_elevation, ar_latlng_min  # , abs_if, time_x, p_len
 
     lat = point[0]
