@@ -1,6 +1,6 @@
 # from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets  +  QtWebEngineWidgets.QWebEngineView
 # from mplwidget import MplWidget
-
+import random
 import time
 
 import numpy as np

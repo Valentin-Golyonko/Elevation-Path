@@ -2,6 +2,7 @@ import json
 import sqlite3
 import time
 from concurrent.futures import ProcessPoolExecutor
+import multiprocessing as mp
 
 import math
 import matplotlib.pyplot as plt
@@ -11,7 +12,7 @@ from matplotlib.widgets import Cursor
 import logs.Log_Color as Logs
 
 Logs.log_start("Please wait! Running...")
-run_geojson = False
+run_geojson = True
 
 # time_x = 0
 # p_len = 0
@@ -29,6 +30,7 @@ def main(ar_p):
     start_time_0 = time.perf_counter()
     global path_points, ar_d_min, ar_elevation, ar_latlng_min, number_of_points
 
+    # ar_p = [53.822975, 27.087467, 52.911044, 27.691194]  # Вертники, h = 292 - Слуцк, h = 146; 109.148167 km
     lat0a = ar_p[0]
     lng0a = ar_p[1]
     lat0b = ar_p[2]
@@ -80,7 +82,7 @@ def open_db(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
                              " WHERE lat BETWEEN " + str(min_lat) + " AND " + str(max_lat) +
                              " AND lng BETWEEN " + str(min_lng) + " AND " + str(max_lng)).fetchall()
     except sqlite3.DatabaseError as err:
-        print("\tError: ", err)
+        Logs.log_error("\tDB Error: " + str(err))
     else:
         db.commit()
 
@@ -141,16 +143,6 @@ def find_points(row_db):
     # p_len = 0
     # abs_if = 0
 
-    # !!! multiprocessing, multi threads
-    # with ProcessPoolExecutor() as executor:
-    #     for count, rez in zip(row_db, executor.map(main_calculation, row_db)):
-    #         start_time_i = time.perf_counter()
-    #
-    #         Logs.log_info("\trow_db = " + str(count) + "\trez = " + str(rez))  # for the check!
-    #
-    #         time_i += time.perf_counter() - start_time_i
-    #         arr_len += 1
-
     # !!! Normal Python
     for db_point in row_db:
         start_time_i = time.perf_counter()
@@ -167,14 +159,16 @@ def find_points(row_db):
     # -------- BENCHMARK RESULT HERE --------
     time_find_points = time.perf_counter() - time0_find_points
     Logs.log_warning("\tTIME_FIND_POINTS: " + str(time_find_points) + " sec (" + str(time_find_points / 60) + " min)")
-    # for simple python without MP (ProcessPoolExecutor)
+
+    # For simple python without MP (ProcessPoolExecutor)
     # time_i: 4.337876795356802e-05 sec, arr_len: 190561 sum: 8.266301399999875
-    # TIME_FIND_POINTS: 8.8459885 s (0.14743314166666668 min)
+    # TIME_FIND_POINTS: 6.977238956000008 sec (0.11628731593333347 min)
+
     # For MP - no result !!!
 
 
 def main_calculation(point):  # (position, path_points, ar_d_min, ar_elevation, ar_latlng_min, db_row)
-    global number_of_points, path_points, ar_d_min, ar_elevation, ar_latlng_min  # , abs_if, time_x, p_len
+    global ar_d_min, ar_elevation, ar_latlng_min  # , abs_if, time_x, p_len
 
     lat = point[0]
     lng = point[1]
@@ -286,23 +280,30 @@ def do_it_with_mp(co):
 # ------------------------------------- main --------------------------------------------- if need to test something
 if __name__ == '__main__':
     if run_geojson:
-        lata = 53.822975  # Вертники, h = 292
-        lnga = 27.087467
-        latb = 52.911044  # Слуцк, h = 146
-        lngb = 27.691194
-        ar = [lata, lnga, latb, lngb]
-        # d_ab: 109.148167 km
+        Logs.log_verbose("Running GeoJson Test")
+        ar = [53.822975, 27.087467, 52.911044, 27.691194]   # Вертники, h = 292 - Слуцк, h = 146; 109.148167 km
 
-        # main(lata, lnga, latb, lngb)
+        sr_lat = (ar[0] + ar[2]) / 2
+        sr_lng = (ar[1] + ar[3]) / 2
+
+        ar_1 = [ar[0], ar[1], sr_lat, sr_lng]
+        ar_2 = [sr_lat, sr_lng, ar[2], ar[3]]
+        ar_3 = [ar_1, ar_2]
+
+        # main(ar)
+
+        # import multiprocessing as mp
         # pr = []
         # for i in range(1):
-        #     p = mp.Process(target=main, args=(lata, lnga, latb, lngb))
+        #     p = mp.Process(target=main, args=(ar, ))
         #     pr.append(p)
         #     p.start()
         # for prs in pr:
         #     prs.join()
 
         # !!! multiprocessing, multi threads
-        with ProcessPoolExecutor(max_workers=4) as executor:  # max_workers=4
-            rez = executor.submit(main, ar)
-            Logs.log_info("\tProcessPoolExecutor Done: " + str(rez))
+        with ProcessPoolExecutor() as executor:  # max_workers=4
+            rez_1 = executor.map(main, ar_3)
+            # rez_2 = executor.submit(main, ar_2)
+            Logs.log_info("\tProcessPoolExecutor Done: " + str(rez_1))
+            # Logs.log_info("\tProcessPoolExecutor Done: " + str(rez_2))
