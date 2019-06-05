@@ -2,7 +2,6 @@ import json
 import sqlite3
 import time
 from concurrent.futures import ProcessPoolExecutor
-import multiprocessing as mp
 
 import math
 import matplotlib.pyplot as plt
@@ -30,7 +29,6 @@ def main(ar_p):
     start_time_0 = time.perf_counter()
     global path_points, ar_d_min, ar_elevation, ar_latlng_min, number_of_points
 
-    # ar_p = [53.822975, 27.087467, 52.911044, 27.691194]  # Вертники, h = 292 - Слуцк, h = 146; 109.148167 km
     lat0a = ar_p[0]
     lng0a = ar_p[1]
     lat0b = ar_p[2]
@@ -39,7 +37,7 @@ def main(ar_p):
     db_list = open_db(lat0a, lng0a, lat0b, lng0b)
 
     d_ab = distance(lat0a, lng0a, lat0b, lng0b)
-    Logs.log_info("\td_ab: " + str(d_ab) + " km")
+    Logs.log_info("\td_ab: %s km" % str(d_ab))
     number_of_points = int(d_ab) * 1  # количество точек на маршруте
 
     path_points = path(lat0a, lng0a, lat0b, lng0b, number_of_points)  # [point_in_path, n_points]
@@ -49,7 +47,6 @@ def main(ar_p):
     ar_elevation = np.zeros(number_of_points)  # np.zeros(number_of_points) ; [0.0] * p
     ar_latlng_min = [[0.0, 0.0]] * number_of_points  # np.zeros([p, 2]) ; [[0.0, 0.0]] * p
 
-    # (number_of_points, path_points, ar_d_min, ar_elevation, ar_latlng_min, db_list)
     find_points(db_list)
 
     Logs.log_info("\t[" + str(len(ar_latlng_min)) + "] latlng_min: " + str(ar_latlng_min) +
@@ -58,11 +55,10 @@ def main(ar_p):
 
     create_json(lat0a, lng0a, lat0b, lng0b, ar_latlng_min)
 
-    eh = earth_height(lat0a, lng0a, lat0b, lng0b)
-    plot_elevation_in_separate_window(number_of_points, ar_elevation, eh)
+    time_main = time.perf_counter() - start_time_0
+    Logs.log_info("\ttime_main: " + str(time_main))
 
-    time_all = time.perf_counter() - start_time_0
-    Logs.log_info("\ttime_all: " + str(time_all) + "\n")
+    return ar_elevation
 
 
 def open_db(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
@@ -143,7 +139,6 @@ def find_points(row_db):
     # p_len = 0
     # abs_if = 0
 
-    # !!! Normal Python
     for db_point in row_db:
         start_time_i = time.perf_counter()
 
@@ -152,28 +147,21 @@ def find_points(row_db):
         time_i += time.perf_counter() - start_time_i
         arr_len += 1
 
+    # -------- BENCHMARK RESULT HERE --------
     # print("\ttime_x: " + str(time_x / p_len) + " p_len: " + str(p_len) + " sum: " + str(time_x) +
     #       " abs_if: " + str(abs_if))
     Logs.log_info("\ttime_i: " + str(time_i / arr_len) + " sec, arr_len: " + str(arr_len) + " sum: " + str(time_i))
 
-    # -------- BENCHMARK RESULT HERE --------
     time_find_points = time.perf_counter() - time0_find_points
     Logs.log_warning("\tTIME_FIND_POINTS: " + str(time_find_points) + " sec (" + str(time_find_points / 60) + " min)")
 
-    # For simple python without MP (ProcessPoolExecutor)
-    # time_i: 4.337876795356802e-05 sec, arr_len: 190561 sum: 8.266301399999875
-    # TIME_FIND_POINTS: 6.977238956000008 sec (0.11628731593333347 min)
 
-    # For MP - no result !!!
-
-
-def main_calculation(point):  # (position, path_points, ar_d_min, ar_elevation, ar_latlng_min, db_row)
+def main_calculation(point):
     global ar_d_min, ar_elevation, ar_latlng_min  # , abs_if, time_x, p_len
 
     lat = point[0]
     lng = point[1]
     elev = point[2]
-    # print("\tpoint = %s" % str(point))
     for x in range(number_of_points):
         # start_time_x = time.perf_counter()
         lat_x = path_points[0][x][0]
@@ -181,11 +169,9 @@ def main_calculation(point):  # (position, path_points, ar_d_min, ar_elevation, 
 
         abs_lat = math.fabs(lat_x - lat)
         abs_lng = math.fabs(lng_x - lng)
-        # print("\tabs")
         if abs_lat < 0.00833 and abs_lng < 0.013:  # ~ 1 km; 4x speed up, 5m(192.06705 -> 47.2116)
 
             d_min_x = distance(lat_x, lng_x, lat, lng)
-            # print("\td_min %.2f" % d_min_x)
             if d_min_x < ar_d_min[x]:
                 ar_latlng_min[x] = [lat, lng]
                 ar_elevation[x] = elev
@@ -198,8 +184,6 @@ def main_calculation(point):  # (position, path_points, ar_d_min, ar_elevation, 
             # abs_if += 1  # number of 'good' points
         # time_x += time.perf_counter() - start_time_x  # timers for benchmarking
         # p_len += 1
-
-        # print("\tx = %d" % x)
 
     return True
 
@@ -253,6 +237,8 @@ def plot_elevation_in_separate_window(n_points, elev, earth_h):
     plt.show()
 
 
+# высота земной поверхности над хордой;
+# Земля круглая -> т.е. хорда - это наикратчайшее растояние между точками А и Б через Землю
 def earth_height(lat_a, lng_a, lat_b, lng_b):
     Logs.log_verbose("GeoJson: earth_height()")
 
@@ -265,45 +251,66 @@ def earth_height(lat_a, lng_a, lat_b, lng_b):
                               math.cos(rad_lat_a) * math.cos(rad_lat_b) * math.cos(rad_lng_a - rad_lng_b))  # radians
 
     r = 6378.137  # 6363.513 = for BLR \ Minsk; evr = 6378.137 km
-    earth_h = r - (r * math.cos(central_angle / 2))  # km, высота земной поверхности дан хордой
+    earth_h = r - (r * math.cos(central_angle / 2))  # km
 
     Logs.log_info("\tearth_height = " + str(earth_h))
     return earth_h
 
 
+# divided coordinates from A to B to sub arrays
+def divide_coordinates(cdts):
+    Logs.log_verbose("GeoJson: divide_coordinates()")
+
+    # abs_lat < 0.00833 and abs_lng < 0.013:  # ~ 1 km
+    sr_lat = (cdts[0] + cdts[2]) / 2
+    sr_lng = (cdts[1] + cdts[3]) / 2
+
+    ar_1 = [cdts[0], cdts[1], sr_lat, sr_lng]
+    ar_2 = [sr_lat, sr_lng, cdts[2], cdts[3]]
+    ar_3 = [ar_1, ar_2]
+
+    return ar_3
+
+
+# multiprocessing
 def do_it_with_mp(co):
-    with ProcessPoolExecutor() as ex:  # max_workers=4
-        re = ex.submit(main, co)
-        Logs.log_info("\tProcessPoolExecutor Done: " + str(re))
+    Logs.log_verbose("GeoJson: do_it_with_mp()")
+    to = time.perf_counter()
+
+    new_coordinates_arr = divide_coordinates(co)  # divided coordinates from A to B to sub arrays
+
+    qq = []  # sum array of elevation from multiprocess
+
+    with ProcessPoolExecutor() as executor:  # max_workers=4
+        for i, j in zip(new_coordinates_arr, executor.map(main, new_coordinates_arr)):
+            # Logs.log_info("\tProcessPoolExecutor Done. i = %s; j = %s" % (str(i), str(j)))
+
+            qq.extend(j)
+
+    eh = earth_height(co[0], co[1], co[2], co[3])  # all path from A to B
+    nn = len(qq)
+
+    Logs.log_warning("\t Multiprocessing time = %s" % str(time.perf_counter() - to))
+
+    plot_elevation_in_separate_window(nn, qq, eh)
+
+    return qq
 
 
 # ------------------------------------- main --------------------------------------------- if need to test something
 if __name__ == '__main__':
     if run_geojson:
-        Logs.log_verbose("Running GeoJson Test")
-        ar = [53.822975, 27.087467, 52.911044, 27.691194]   # Вертники, h = 292 - Слуцк, h = 146; 109.148167 km
+        Logs.log_verbose("GeoJson: Running GeoJson Test")
 
-        sr_lat = (ar[0] + ar[2]) / 2
-        sr_lng = (ar[1] + ar[3]) / 2
+        # Вертники - Слуцк, 109.148167 km
+        test_coordinates = [53.822975, 27.087467, 52.911044, 27.691194]
 
-        ar_1 = [ar[0], ar[1], sr_lat, sr_lng]
-        ar_2 = [sr_lat, sr_lng, ar[2], ar[3]]
-        ar_3 = [ar_1, ar_2]
+        # main(test_coordinates)            # normal way
+        do_it_with_mp(test_coordinates)  # multiprocessing
 
-        # main(ar)
+        # For simple python without MP (ProcessPoolExecutor)
+        # time_i: 4.337876795356802e-05 sec, arr_len: 190561 sum: 8.266301399999875
+        # TIME_FIND_POINTS: 6.977238956000008 sec (0.11628731593333347 min)
 
-        # import multiprocessing as mp
-        # pr = []
-        # for i in range(1):
-        #     p = mp.Process(target=main, args=(ar, ))
-        #     pr.append(p)
-        #     p.start()
-        # for prs in pr:
-        #     prs.join()
-
-        # !!! multiprocessing, multi threads
-        with ProcessPoolExecutor() as executor:  # max_workers=4
-            rez_1 = executor.map(main, ar_3)
-            # rez_2 = executor.submit(main, ar_2)
-            Logs.log_info("\tProcessPoolExecutor Done: " + str(rez_1))
-            # Logs.log_info("\tProcessPoolExecutor Done: " + str(rez_2))
+        # For MP - no result !!!
+        # Multiprocessing time = 6.2678718

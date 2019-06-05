@@ -36,10 +36,10 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                 self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 511))
 
                 # calculate GeoJson data
-                GeoJson.main(ar_poi)
-                # GeoJson.do_it_with_mp(ar_poi)
+                arr_elev = GeoJson.main(ar_poi)              # normal way
+                # arr_elev = GeoJson.do_it_with_mp(ar_poi)       # multiprocessing
 
-                self.plot_elevation()
+                self.plot_elevation(arr_elev)
                 self.load_osm_map()
 
             elif self.rb_google_map.isChecked():
@@ -64,10 +64,10 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
         return [latitude_a, longitude_a, latitude_b, longitude_b]
 
-    def plot_elevation(self):
+    def plot_elevation(self, elev):
         Logs.log_verbose("plot_elevation()")
         nop = GeoJson.number_of_points
-        elev = GeoJson.ar_elevation
+        # elev = GeoJson.ar_elevation
         e_height = GeoJson.earth_height(latitude_a, longitude_a, latitude_b, longitude_b)
 
         x1 = np.linspace(0, nop, num=nop)
