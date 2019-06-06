@@ -36,8 +36,8 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                 self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 511))
 
                 # calculate GeoJson data
-                arr_elev = GeoJson.main(ar_poi)              # normal way
-                # arr_elev = GeoJson.do_it_with_mp(ar_poi)       # multiprocessing
+                # arr_elev = GeoJson.main(ar_poi)                 # normal way
+                arr_elev = GeoJson.do_it_with_mp(ar_poi)        # multiprocessing
 
                 self.plot_elevation(arr_elev)
                 self.load_osm_map()
@@ -66,7 +66,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
     def plot_elevation(self, elev):
         Logs.log_verbose("plot_elevation()")
-        nop = GeoJson.number_of_points
+        nop = len(elev)
         # elev = GeoJson.ar_elevation
         e_height = GeoJson.earth_height(latitude_a, longitude_a, latitude_b, longitude_b)
 
@@ -85,7 +85,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.gv_osm_plot.canvas.ax.grid(True)
         self.gv_osm_plot.canvas.fig.legend()
         self.gv_osm_plot.canvas.fig.tight_layout(None, 0.7, 0.7, 0.7, None)
-        self.gv_osm_plot.canvas.ax.autoscale(enable=True, axis='both', tight=False)
+        self.gv_osm_plot.canvas.ax.autoscale(enable=True, axis='both', tight=True)
         self.gv_osm_plot.canvas.draw()
 
     def load_osm_map(self):

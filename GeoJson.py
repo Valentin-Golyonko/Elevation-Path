@@ -65,10 +65,12 @@ def open_db(lat_0_a, lng_0_a, lat_0_b, lng_0_b):
     Logs.log_verbose("GeoJson: open_db()")
     time0_db = time.perf_counter()
 
-    max_lat = int(max(lat_0_a, lat_0_b)) + 1  # int(53.8) = 53
-    max_lng = int(max(lng_0_a, lng_0_b)) + 1  # so, if lat_0_a = 53.822975, lat_0_b = 52.911044
-    min_lat = int(min(lat_0_a, lat_0_b))  # range(min_lat, max_lat) = 52, 53
-    min_lng = int(min(lng_0_a, lng_0_b))  # step = 1
+    delta_lat_bd = 0.00833      # ~1 km
+    delta_lng_bd = 0.013        # ~1 km
+    max_lat = max(lat_0_a, lat_0_b) + delta_lng_bd
+    max_lng = max(lng_0_a, lng_0_b) + delta_lng_bd
+    min_lat = min(lat_0_a, lat_0_b) - delta_lat_bd
+    min_lng = min(lng_0_a, lng_0_b) - delta_lng_bd
 
     row = []
     db = sqlite3.connect('data/elev_1m.db')
@@ -100,7 +102,7 @@ def distance(lat_a, lng_a, lat_b, lng_b, ):
     return dist
 
 
-def path(lat_0_a, lng_0_a, lat_0_b, lng_0_b, n_points):
+def path(lat_0_a, lng_0_a, lat_0_b, lng_0_b, n_points, delta_lat=0.0, delta_lng=0.0):   # delta_ = ~1km
     Logs.log_verbose("GeoJson: path()")
     time0_path = time.perf_counter()
 
@@ -111,13 +113,21 @@ def path(lat_0_a, lng_0_a, lat_0_b, lng_0_b, n_points):
     point_in_path = []  # np.zeros([number_of_points + 1, 2])       # 3x slower if using numpy
     for cp in range(0, n_points, 1):  # нахождение Х точек на маршруте; int(number_of_points / 2)
         if lat_0_a < lat_0_b and lng_0_a < lng_0_b:
-            point_in_path.append([lat_0_a + dif_coord_per_point[0] * cp, lng_0_a + dif_coord_per_point[1] * cp])
+            a = lat_0_a + (dif_coord_per_point[0] * cp) + delta_lat
+            b = lng_0_a + (dif_coord_per_point[1] * cp) + delta_lng
+            point_in_path.append([a, b])
         elif lat_0_a < lat_0_b and lng_0_a > lng_0_b:
-            point_in_path.append([lat_0_a + dif_coord_per_point[0] * cp, lng_0_a - dif_coord_per_point[1] * cp])
+            c = lat_0_a + (dif_coord_per_point[0] * cp) + delta_lat
+            d = lng_0_a - (dif_coord_per_point[1] * cp) + delta_lng
+            point_in_path.append([c, d])
         elif lat_0_a > lat_0_b and lng_0_a > lng_0_b:
-            point_in_path.append([lat_0_a - dif_coord_per_point[0] * cp, lng_0_a - dif_coord_per_point[1] * cp])
+            e = lat_0_a - (dif_coord_per_point[0] * cp) - delta_lat
+            f = lng_0_a - (dif_coord_per_point[1] * cp) - delta_lng
+            point_in_path.append([e, f])
         elif lat_0_a > lat_0_b and lng_0_a < lng_0_b:
-            point_in_path.append([lat_0_a - dif_coord_per_point[0] * cp, lng_0_a + dif_coord_per_point[1] * cp])
+            g = lat_0_a - (dif_coord_per_point[0] * cp) - delta_lat
+            h = lng_0_a + (dif_coord_per_point[1] * cp) + delta_lng
+            point_in_path.append([g, h])
 
     point_in_path.append([lat_0_b, lng_0_b])  # add point 'B'
     n_points += 1
@@ -257,31 +267,26 @@ def earth_height(lat_a, lng_a, lat_b, lng_b):
     return earth_h
 
 
-# divided coordinates from A to B to sub arrays
-def divide_coordinates(cdts):
-    Logs.log_verbose("GeoJson: divide_coordinates()")
-
-    # abs_lat < 0.00833 and abs_lng < 0.013:  # ~ 1 km
-    sr_lat = (cdts[0] + cdts[2]) / 2
-    sr_lng = (cdts[1] + cdts[3]) / 2
-
-    ar_1 = [cdts[0], cdts[1], sr_lat, sr_lng]
-    ar_2 = [sr_lat, sr_lng, cdts[2], cdts[3]]
-    ar_3 = [ar_1, ar_2]
-
-    return ar_3
-
-
 # multiprocessing
 def do_it_with_mp(co):
     Logs.log_verbose("GeoJson: do_it_with_mp()")
     to = time.perf_counter()
 
-    new_coordinates_arr = divide_coordinates(co)  # divided coordinates from A to B to sub arrays
+    # divide coordinates from A to B to sub arrays
+    # 10 lines, delta_ ~1km
+    divide = 10
+    divided_coordinates = path(co[0], co[1], co[2], co[3], divide, 0.00833, 0.013)[0]
+
+    new_coordinates_arr = np.zeros((divide, 4))     # new arr: [[lat_a, lng_a, lat_p1, lng_p1],
+    for i in range(divide):                         # [lat_p1, lng_p1, lat_p2, lng_p2], [lat_p2, lng_p2, lat_p3...
+        new_coordinates_arr[i][0] = divided_coordinates[i][0]
+        new_coordinates_arr[i][1] = divided_coordinates[i][1]
+        new_coordinates_arr[i][2] = divided_coordinates[i+1][0]
+        new_coordinates_arr[i][3] = divided_coordinates[i+1][1]
 
     qq = []  # sum array of elevation from multiprocess
 
-    with ProcessPoolExecutor() as executor:  # max_workers=4
+    with ProcessPoolExecutor(max_workers=4) as executor:  # max_workers=4
         for i, j in zip(new_coordinates_arr, executor.map(main, new_coordinates_arr)):
             # Logs.log_info("\tProcessPoolExecutor Done. i = %s; j = %s" % (str(i), str(j)))
 
@@ -313,4 +318,4 @@ if __name__ == '__main__':
         # TIME_FIND_POINTS: 6.977238956000008 sec (0.11628731593333347 min)
 
         # For MP - no result !!!
-        # Multiprocessing time = 6.2678718
+        # Multiprocessing time = 5.959768771999734
