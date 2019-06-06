@@ -32,10 +32,20 @@ You may change (in the build v.1.0):
     - line 212 in "create_ui.py" <code>'samples': ''' + str(<b>1</b> * GeoJson.number_of_points) + '''</code>
 
 # TODO:
-- <s>redo the program data exchange with the server;</s>
-- connection error with local (WAN) server;
-- <s>database;</s>
-- multithreading;
 - elevation chart scale;
-- speed up DB;
-- 
+- <s>redo the program data exchange with the server;</s>
+- <s>database;</s>
+- <s>multiprocessing</s>;
+- <s>speed up DB</s>.
+
+# Benchmark results:
+<p>1st test_coordinates = [53.822975, 27.087467, 52.911044, 27.691194] - 110 km</p>
+<p>2d test_coordinates = [51.742627, 23.964322, 55.404321, 30.621924] - 600 km</p>
+
+- For simple python without MP (ProcessPoolExecutor):
+<p>1 TIME_FIND_POINTS: 3.4808 sec (0.058 min); 110 km, extracted data from the database = 67.418</p>
+<p>2 TIME_FIND_POINTS: 852.0257 sec (14.2 min, before 06/06/19 it was 26.4 min); 600 km, extracted data from the database = 2.979.379</p>
+
+- With MP!!!
+<p>1 Multiprocessing time = 2.4771784 sec; 110 km, extracted data from the database = 10.446‬</p>
+<p>2 Multiprocessing time = 6.7197512 sec; 600 km, extracted data from the database = 303.636</p>

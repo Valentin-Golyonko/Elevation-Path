@@ -35,6 +35,7 @@ def main(ar_p):
     lng0b = ar_p[3]
 
     db_list = open_db(lat0a, lng0a, lat0b, lng0b)
+    Logs.log_warning("\tlen(db_list): %s" % str(len(db_list)))
 
     d_ab = distance(lat0a, lng0a, lat0b, lng0b)
     Logs.log_info("\td_ab: %s km" % str(d_ab))
@@ -295,7 +296,7 @@ def do_it_with_mp(co):
     eh = earth_height(co[0], co[1], co[2], co[3])  # all path from A to B
     nn = len(qq)
 
-    Logs.log_warning("\t Multiprocessing time = %s" % str(time.perf_counter() - to))
+    Logs.log_warning("\t Multiprocessing time = %s sec" % str(time.perf_counter() - to))
 
     plot_elevation_in_separate_window(nn, qq, eh)
 
@@ -307,15 +308,20 @@ if __name__ == '__main__':
     if run_geojson:
         Logs.log_verbose("GeoJson: Running GeoJson Test")
 
-        # Вертники - Слуцк, 109.148167 km
-        test_coordinates = [53.822975, 27.087467, 52.911044, 27.691194]
+        test_coordinates = [53.822975, 27.087467, 52.911044, 27.691194]     # Вертники - Слуцк, 109.148167 km
+        # test_coordinates = [51.742627, 23.964322, 55.404321, 30.621924]     # Малорита - Сураж, 600km
 
         # main(test_coordinates)            # normal way
         do_it_with_mp(test_coordinates)  # multiprocessing
 
-        # For simple python without MP (ProcessPoolExecutor)
-        # time_i: 4.337876795356802e-05 sec, arr_len: 190561 sum: 8.266301399999875
-        # TIME_FIND_POINTS: 6.977238956000008 sec (0.11628731593333347 min)
+        '''
+        -------- BENCHMARK RESULT HERE --------
+        For simple python without MP (ProcessPoolExecutor)
+        TIME_FIND_POINTS: 3.4808 sec (0.058 min); 110 km, extracted data from the database = 67.418
+        TIME_FIND_POINTS: 852.0257 sec (14.2 min, before 06/06/19 it was 26.4 min);
+         600 km, extracted data from the database = 2.979.379
 
-        # For MP - no result !!!
-        # Multiprocessing time = 5.959768771999734
+        For MP!!!
+        Multiprocessing time = 2.4771784 sec; 110 km, extracted data from the database = 10.446‬
+        Multiprocessing time = 6.7197512 sec; 600 km, extracted data from the database = 303.636
+        '''
