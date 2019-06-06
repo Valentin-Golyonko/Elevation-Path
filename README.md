@@ -49,3 +49,6 @@ You may change (in the build v.1.0):
 - With MP!!!
 <p>1 Multiprocessing time = 2.4771784 sec; 110 km, extracted data from the database = 10.446‬</p>
 <p>2 Multiprocessing time = 6.7197512 sec; 600 km, extracted data from the database = 303.636</p>
+
+# Bug:
+- On Windows multiple GUI opens in multiprocessing mode!
