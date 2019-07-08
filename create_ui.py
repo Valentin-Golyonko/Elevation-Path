@@ -1,15 +1,18 @@
-# from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets  +  QtWebEngineWidgets.QWebEngineView
-# from mplwidget import MplWidget
+"""
+from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets  +  QtWebEngineWidgets.QWebEngineView
+from mplwidget import MplWidget
+"""
+
 import random
 import time
 
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
 
-import GeoJson
-import logs.Log_Color as Logs
+from GeoJson import ElevationCalculation
 from api_key.keys import google_map_js_api
 from gui.elevation_path import UiMainWindow
+from logs.Log_Color import *
 
 
 class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
@@ -18,28 +21,34 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.setupUi(self)
         self.show()
 
+        self.latitude_a = -1.0
+        self.longitude_a = -1.0
+        self.latitude_b = -1.0
+        self.longitude_b = -1.0
+
         self.fill_forms()
 
         self.pb_do_path.clicked.connect(self.do_path)
 
-    #
     def do_path(self):
-        Logs.log_verbose("do_path()")
+        log_verbose("do_path()")
         time_60 = time.perf_counter()
 
         ar_poi = self.get_points_ab()
 
-        if latitude_a != -1 and longitude_a != -1 and latitude_b != -1 and longitude_b != -1:
-            # select map server
+        if -1.0 not in ar_poi:
+            """select map server"""
             if self.rb_osm_map.isChecked():
                 self.gv_osm_plot.show()
                 self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 511))
 
-                # calculate GeoJson data
-                # arr_elev = GeoJson.main(ar_poi)                 # normal way
-                arr_elev = GeoJson.do_it_with_mp(ar_poi)        # multiprocessing
+                """calculate Elevation data"""
+                # arr_elev = ElevationCalculation().main(ar_poi)              # normal way
+                arr_elev = ElevationCalculation().do_it_with_mp(ar_poi)  # multiprocessing
 
-                self.plot_elevation(arr_elev)
+                height = ElevationCalculation().earth_height(ar_poi)
+
+                self.plot_elevation(arr_elev, height)
                 self.load_osm_map()
 
             elif self.rb_google_map.isChecked():
@@ -48,30 +57,27 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
                 self.load_google_maps()
         else:
-            Logs.log_info("\tcoordinates input ERROR")
+            log_error("\tcoordinates input ERROR")
 
         time_61 = time.perf_counter() - time_60
-        Logs.log_info("\ttime_6.1: " + str(time_61) + " (" + str(time_61 / 60) + " min)\n")
+        log_warning("\ttime_6.1: " + str(time_61) + " (" + str(time_61 / 60) + " min)\n")
 
     def get_points_ab(self):
-        Logs.log_verbose("get_points_ab()")
-        global latitude_a, longitude_a, latitude_b, longitude_b
+        log_verbose("get_points_ab()")
 
-        latitude_a = self.input_check(self.le_lat_a.text(), self.le_lat_a)
-        longitude_a = self.input_check(self.le_lng_a.text(), self.le_lng_a)
-        latitude_b = self.input_check(self.le_lat_b.text(), self.le_lat_b)
-        longitude_b = self.input_check(self.le_lng_b.text(), self.le_lng_b)
+        self.latitude_a = self.input_check(self.le_lat_a.text(), self.le_lat_a)
+        self.longitude_a = self.input_check(self.le_lng_a.text(), self.le_lng_a)
+        self.latitude_b = self.input_check(self.le_lat_b.text(), self.le_lat_b)
+        self.longitude_b = self.input_check(self.le_lng_b.text(), self.le_lng_b)
 
-        return [latitude_a, longitude_a, latitude_b, longitude_b]
+        return [self.latitude_a, self.longitude_a, self.latitude_b, self.longitude_b]
 
-    def plot_elevation(self, elev):
-        Logs.log_verbose("plot_elevation()")
+    def plot_elevation(self, elev, e_height):
+        log_verbose("plot_elevation()")
         nop = len(elev)
-        # elev = GeoJson.ar_elevation
-        e_height = GeoJson.earth_height(latitude_a, longitude_a, latitude_b, longitude_b)
 
         x1 = np.linspace(0, nop, num=nop)
-        y1 = np.sin(2 * np.pi * x1 / (nop * 2)) * (e_height * 1000)
+        y1 = np.sin(2 * np.pi * x1 / (nop * 2)) * 50          # e_height    # meters
         y2 = [0.0] * x1
         for q in range(0, nop):
             y2[q] = elev[q]
@@ -85,13 +91,13 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.gv_osm_plot.canvas.ax.grid(True)
         self.gv_osm_plot.canvas.fig.legend()
         self.gv_osm_plot.canvas.fig.tight_layout(None, 0.7, 0.7, 0.7, None)
-        self.gv_osm_plot.canvas.ax.autoscale(enable=True, axis='both', tight=True)
+        self.gv_osm_plot.canvas.ax.autoscale(enable=True, axis='both', tight=False)
         self.gv_osm_plot.canvas.draw()
 
     def load_osm_map(self):
         self.webView.setUrl(QtCore.QUrl("http://localhost/index.html" +
-                                        "?lata=" + str(latitude_a) + "&lnga=" + str(longitude_a) +
-                                        "&latb=" + str(latitude_b) + "&lngb=" + str(longitude_b)))
+                                        "?lata=" + str(self.latitude_a) + "&lnga=" + str(self.longitude_a) +
+                                        "&latb=" + str(self.latitude_b) + "&lngb=" + str(self.longitude_b)))
         # or "http://Your Server IP/index.html" + same
 
         self.webView.update()
@@ -147,10 +153,10 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
                                     function loadJson(){
                                         '''
-                               + str("point_a_lat = " + str(latitude_a) + ";" +
-                                     "point_a_lng = " + str(longitude_a) + ";" +
-                                     "point_b_lat = " + str(latitude_b) + ";" +
-                                     "point_b_lng = " + str(longitude_b) + ";") +
+                               + str("point_a_lat = " + str(self.latitude_a) + ";" +
+                                     "point_a_lng = " + str(self.longitude_a) + ";" +
+                                     "point_b_lat = " + str(self.latitude_b) + ";" +
+                                     "point_b_lng = " + str(self.longitude_b) + ";") +
                                '''
                             }
 
@@ -211,7 +217,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                                 // Initiate the path request.
                                 elevator.getElevationAlongPath({
                                   'path': path,
-                                  'samples': ''' + str(2 * GeoJson.number_of_points) + '''
+                                  'samples': ''' + str(2 * ElevationCalculation().number_of_points) + '''
                                         }, plotElevation);
                                     }
 
@@ -231,7 +237,8 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
                                         var between_ab = [marker1.getPosition(), marker2.getPosition()];
                                         var distance_ab = 
-                                            google.maps.geometry.spherical.computeDistanceBetween(between_ab[0], between_ab[1]);
+                                            google.maps.geometry.spherical
+                                            .computeDistanceBetween(between_ab[0], between_ab[1]);
                                         var round_distance = Math.round(distance_ab);
                                         distance_ab_km = round_distance / 1000;
                                         document.getElementById('distance_ab').value = distance_ab_km;
@@ -301,8 +308,13 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                 ''')
         self.webView.setHtml(google_html_page)
 
-    # проверка неправильного ввода (посимвольный перебор)
     def input_check(self, input_str, style):
+        """ проверка неправильного ввода (посимвольный перебор)
+
+        :param input_str:
+        :param style:
+        :return:
+        """
         if input_str != "" \
                 and not input_str.__eq__("-.") \
                 and not input_str.__eq__(".") \
@@ -356,25 +368,23 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
         return -1
 
-    # заполнение форм случайными значениями из диапазона
     def fill_forms(self):
-        Logs.log_verbose("fill_forms()")
+        """ заполнение форм случайными значениями из диапазона
+
+        :return:
+        """
+        log_verbose("fill_forms()")
 
         self.webView.setUrl(QtCore.QUrl("http://localhost/index.html"))
 
-        # lat_a = random.randint(53156653, 54082254) / 1000000
-        # lng_a = random.randint(24884033, 26976929) / 1000000
-        # lat_b = random.randint(53156653, 54082254) / 1000000
-        # lng_b = random.randint(24884033, 26976929) / 1000000
-
-        lat_a = 53.822975
-        lng_a = 27.087467
-        lat_b = 52.911044
-        lng_b = 27.691194
+        lat_a = random.randint(53156653, 54082254) / 1000000
+        lng_a = random.randint(24884033, 26976929) / 1000000
+        lat_b = random.randint(53156653, 54082254) / 1000000
+        lng_b = random.randint(24884033, 26976929) / 1000000
 
         self.le_lat_a.setText(str(lat_a))
         self.le_lng_a.setText(str(lng_a))
         self.le_lat_b.setText(str(lat_b))
         self.le_lng_b.setText(str(lng_b))
 
-        Logs.log_info("\tOK - fill_forms()")
+        log_info("\tOK - fill_forms()")
