@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!–– v2 ––>
-<html style="height:100%;margin:0;padding:0;">
+<html style="height:100%;margin:0;padding:0;" lang="ru">
 	<head>
 		<title>Leaflet page with OSM render server selection</title>
 		<meta charset="utf-8"/>
@@ -17,7 +17,7 @@
 		<script>
 			var parsedUrl = new URL(window.location.href);
 			var queryString = parsedUrl.search;
-			console.log(queryString)
+			console.log(queryString);
 			// Further parsing:
 			let params = new URLSearchParams(queryString);
 			let point_a_lat = parseFloat(params.get("lata"));
@@ -25,10 +25,10 @@
 			let point_b_lat = parseFloat(params.get("latb"));
 			let point_b_lng = parseFloat(params.get("lngb"));
 
-			console.log(point_a_lat)
-			console.log(point_a_lng)
-			console.log(point_b_lat)
-			console.log(point_b_lng)
+			console.log(point_a_lat);
+			console.log(point_a_lng);
+			console.log(point_b_lat);
+			console.log(point_b_lng);
 
 			var tooltip_a = "<b>Point A</b>";
 			var tooltip_b = "<b>Point B</b>";
@@ -41,7 +41,7 @@
 				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 			}).addTo(map);
 
-			var hash = L.hash(map)
+			var hash = L.hash(map);
 
 			var mark_a = L.marker([point_a_lat, point_a_lng]).addTo(map);
 			mark_a.bindTooltip(tooltip_a).openTooltip();

@@ -30,7 +30,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
         self.pb_do_path.clicked.connect(self.do_path)
 
-    def do_path(self):
+    def do_path(self) -> None:
         log_verbose("do_path()")
         time_60 = time.perf_counter()
 
@@ -43,10 +43,10 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                 self.webView.setGeometry(QtCore.QRect(0, 159, 1101, 511))
 
                 """calculate Elevation data"""
-                # arr_elev = ElevationCalculation().main(ar_poi)              # normal way
-                arr_elev = ElevationCalculation().do_it_with_mp(ar_poi)  # multiprocessing
-
-                height = ElevationCalculation().earth_height(ar_poi)
+                elev_instance = ElevationCalculation()
+                # arr_elev = elev_instance.do_it_normal_way(ar_poi)  # normal way
+                arr_elev = elev_instance.do_it_with_mp(ar_poi)  # multiprocessing
+                height = elev_instance.earth_height(ar_poi)
 
                 self.plot_elevation(arr_elev, height)
                 self.load_osm_map()
@@ -60,9 +60,9 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
             log_error("\tcoordinates input ERROR")
 
         time_61 = time.perf_counter() - time_60
-        log_warning("\ttime_6.1: " + str(time_61) + " (" + str(time_61 / 60) + " min)\n")
+        log_warning("\ttime_6.1: %.6f sec = %.2f min\n" % (time_61, time_61 / 60))
 
-    def get_points_ab(self):
+    def get_points_ab(self) -> list:
         log_verbose("get_points_ab()")
 
         self.latitude_a = self.input_check(self.le_lat_a.text(), self.le_lat_a)
@@ -72,12 +72,12 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
         return [self.latitude_a, self.longitude_a, self.latitude_b, self.longitude_b]
 
-    def plot_elevation(self, elev, e_height):
+    def plot_elevation(self, elev: list, e_height: float) -> None:
         log_verbose("plot_elevation()")
         nop = len(elev)
 
         x1 = np.linspace(0, nop, num=nop)
-        y1 = np.sin(2 * np.pi * x1 / (nop * 2)) * 50          # e_height    # meters
+        y1 = np.sin(2 * np.pi * x1 / (nop * 2)) * 50  # e_height, meters
         y2 = [0.0] * x1
         for q in range(0, nop):
             y2[q] = elev[q]
@@ -94,7 +94,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         self.gv_osm_plot.canvas.ax.autoscale(enable=True, axis='both', tight=False)
         self.gv_osm_plot.canvas.draw()
 
-    def load_osm_map(self):
+    def load_osm_map(self) -> None:
         self.webView.setUrl(QtCore.QUrl("http://localhost/index.html" +
                                         "?lata=" + str(self.latitude_a) + "&lnga=" + str(self.longitude_a) +
                                         "&latb=" + str(self.latitude_b) + "&lngb=" + str(self.longitude_b)))
@@ -102,7 +102,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
         self.webView.update()
 
-    def load_google_maps(self):
+    def load_google_maps(self) -> None:
         google_html_page = str('''
                     <!DOCTYPE html>
                     <html>
@@ -278,20 +278,6 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
                                         // Draw the chart using the data within its DIV.
                                         chart.draw(data, options);
-
-                                        // Save data to JSON file
-                                        /*
-                                            var json_distance_ab = JSON.stringify(String(distance_ab_km));
-                                            var json_a_height = JSON.stringify(String(point_a_height));
-                                            var json_b_height = JSON.stringify(String(point_b_height));
-                                            var json_distance = JSON.stringify(point_distance);
-                                            var json_elevation = JSON.stringify(point_elevation);
-                                            document.getElementById("t_d_ab").innerHTML = json_distance_ab;
-                                            document.getElementById("t_a_height").innerHTML = json_a_height;
-                                            document.getElementById("t_b_height").innerHTML = json_b_height;
-                                            document.getElementById("t_distance").innerHTML = json_distance;
-                                            document.getElementById("t_elevation").innerHTML = json_elevation;
-                                        */
                                     }
 
                                     // Release channels and version numbers:
@@ -300,7 +286,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                                     // https://developers.google.com/maps/documentation/javascript/localization
                                 </script>
                                 <script async defer
-                                    src="https://maps.googleapis.com/maps/api/''' + str(google_map_js_api) + '''YOUR_API">
+                                    src="https://maps.googleapis.com/maps/api/''' + str(google_map_js_api) + '''">
                                 </script>
                             </div>
                         </body>
@@ -308,7 +294,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
                 ''')
         self.webView.setHtml(google_html_page)
 
-    def input_check(self, input_str, style):
+    def input_check(self, input_str: str, style) -> float:
         """ проверка неправильного ввода (посимвольный перебор)
 
         :param input_str:
@@ -316,10 +302,10 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
         :return:
         """
         if input_str != "" \
-                and not input_str.__eq__("-.") \
-                and not input_str.__eq__(".") \
-                and not input_str.__eq__("-") \
-                and input_str.__len__() < 16:
+                and input_str != "-." \
+                and input_str != "." \
+                and input_str != "-" \
+                and len(input_str) < 16:
 
             is_float = False
             dot = 0
@@ -368,7 +354,7 @@ class CreateUi(QtWidgets.QMainWindow, UiMainWindow):
 
         return -1
 
-    def fill_forms(self):
+    def fill_forms(self) -> None:
         """ заполнение форм случайными значениями из диапазона
 
         :return:

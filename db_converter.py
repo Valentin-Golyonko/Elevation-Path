@@ -119,11 +119,11 @@ def open_db():
     print("\ttime_6.1: " + str(time.perf_counter() - time_60))
 
 
-# ------------------------------------- main ---------------------------------------------
-open_geojson()
+if __name__ == '__main__':
+    open_geojson()
 
-test_geojson()
+    test_geojson()
 
-convert_geojson_to_db()
+    convert_geojson_to_db()
 
-# open_db()
+    # open_db()
