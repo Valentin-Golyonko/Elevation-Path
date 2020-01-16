@@ -68,7 +68,7 @@ class ElevationCalculation:
         min_lng = min(_co[1], _co[3]) - self.delta_lng
 
         row = []
-        db = sqlite3.connect('data/db_elev_1m.sqlite3')
+        db = sqlite3.connect('data/elev_1m.db')     # elev_5m
         cursor = db.cursor()
         try:
             row = cursor.execute("SELECT * FROM elevation" +
